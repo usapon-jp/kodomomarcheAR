@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
+  <g fill="none" fill-rule="evenodd">
+    <path fill="#8A6248" d="M236 221c0-47 38-85 84-85s84 38 84 85v40h22c36 0 65 29 65 65v93c0 36-29 65-65 65h-30l-16 59h-40l18-66h-76l18 66h-40l-16-59h-30c-36 0-65-29-65-65v-93c0-36 29-65 65-65h22v-40Z"/>
+    <circle cx="258" cy="182" r="56" fill="#8A6248"/>
+    <circle cx="382" cy="182" r="56" fill="#8A6248"/>
+    <circle cx="258" cy="182" r="33" fill="#FFF8EF"/>
+    <circle cx="382" cy="182" r="33" fill="#FFF8EF"/>
+    <circle cx="290" cy="320" r="20" fill="#2B211C"/>
+    <circle cx="350" cy="320" r="20" fill="#2B211C"/>
+    <path stroke="#2B211C" stroke-linecap="round" stroke-width="12" d="M289 381c20 18 42 18 62 0"/>
+    <path stroke="#D596A5" stroke-linecap="round" stroke-width="18" d="M241 437c36 28 78 42 126 42 48 0 90-14 126-42"/>
+    <path fill="#F4D3A8" d="M240 241c0-44 36-80 80-80s80 36 80 80v171c0 44-36 80-80 80s-80-36-80-80V241Z"/>
+    <path fill="#D596A5" d="M311 342c7-14 16-21 27-21s20 7 27 21c-19 10-37 10-54 0Z"/>
+  </g>
+</svg>

@@ -1,494 +1,88 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>うさみみAR</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-<style>
-body { margin: 0; overflow: hidden; background: #000; }
-video, canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.mirror {
-  transform: scaleX(-1);
-}
-#status {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  gap: 16px;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.58);
-  color: #fff;
-  font-family: sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  text-align: center;
-  z-index: 1000;
-  pointer-events: auto;
-}
-
-#status.hidden {
-  display: none;
-}
-
-#startButton {
-  position: relative;
-  border: 0;
-  border-radius: 999px;
-  padding: 14px 24px;
-  background: #fff;
-  color: #111;
-  font-size: 16px;
-  font-weight: 700;
-  z-index: 1001;
-  pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#helpText {
-  font-size: 14px;
-  line-height: 1.7;
-  opacity: 0.95;
-}
-
-#switchButton {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  border: 0;
-  border-radius: 999px;
-  width: 56px;
-  height: 56px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #111;
-  z-index: 1001;
-  display: none;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-}
-
-#switchButton.visible {
-  display: block;
-}
-
-#switchButton svg {
-  width: 28px;
-  height: 28px;
-}
-
-#captureButton {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  border: 0;
-  border-radius: 999px;
-  width: 64px;
-  height: 64px;
-  background: rgba(255, 255, 255, 0.96);
-  color: #111;
-  z-index: 1001;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-}
-
-#captureButton.visible {
-  display: flex;
-}
-
-#captureButton::before {
-  content: "";
-  display: block;
-  width: 44px;
-  height: 44px;
-  border: 3px solid currentColor;
-  border-radius: 999px;
-  box-sizing: border-box;
-}
-
-#toast {
-  position: absolute;
-  left: 50%;
-  top: 20px;
-  transform: translateX(-50%);
-  max-width: calc(100% - 32px);
-  padding: 12px 16px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.72);
-  color: #fff;
-  font-family: sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  text-align: center;
-  z-index: 1002;
-  display: none;
-}
-
-#toast.visible {
-  display: block;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>こどもマルシェAR</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="appShell">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
 
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas"></canvas>
-<div id="status">
-  <div id="statusText">下のボタンを押して、カメラをつかえるようにしてね</div>
-  <div id="helpText">右下のボタンでカメラを切り替えできます。<br>撮った写真はダウンロードファイルに保存されます。</div>
-  <button id="startButton" type="button">カメラをつける</button>
-</div>
-<button id="switchButton" type="button" aria-label="カメラを切り替える" title="カメラを切り替える">
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M9 5 6.5 7.5 9 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M15 14 17.5 16.5 15 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M7 7.5h6a4 4 0 0 1 4 4V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    <path d="M17 16.5h-6a4 4 0 0 1-4-4V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    <path d="M9 8.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-    <path d="M10 4h4l1.2 1.5H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.8L10 4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-  </svg>
-</button>
-<button id="captureButton" type="button" aria-label="しゃしんをとる" title="しゃしんをとる"></button>
-<div id="toast"></div>
+    <div id="status" class="statusPanel">
+      <div id="statusText" class="statusTitle">カメラをつけて、ARフォトをはじめよう</div>
+      <div class="statusBody">
+        <p>アイテムをえらんで、じぶんだけのコーデをつくれます。</p>
+        <p>右上のQRからアイテムをあつめられます。</p>
+        <p>撮った写真はダウンロードファイルに保存されます。</p>
+      </div>
+      <button id="startButton" class="primaryButton" type="button">カメラをつける</button>
+    </div>
 
-<script>
-const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const status = document.getElementById("status");
-const statusText = document.getElementById("statusText");
-const startButton = document.getElementById("startButton");
-const switchButton = document.getElementById("switchButton");
-const captureButton = document.getElementById("captureButton");
-const toast = document.getElementById("toast");
-const earAssets = [
-  { src: "usamimi.png", scale: 1, offsetX: 0, offsetY: 0, angleScale: 1 },
-  { src: "usamimi_2.png", scale: 1.24, offsetX: -0.02, offsetY: -0.16, angleScale: 0.2, angleOffset: 0.12 },
-  { src: "usamimi_3.png", scale: 0.9, offsetX: 0, offsetY: -0.22, angleScale: 1 },
-  { src: "usamimi_4.png", scale: 1.12, offsetX: 0, offsetY: -0.12, angleScale: 1 }
-];
-const processedEars = [];
-let currentEarIndex = 0;
-let currentFacingMode = "user";
-let currentStream = null;
-let animationFrameId = null;
-let isSending = false;
-let toastTimeoutId = null;
-let lastFaceBounds = null;
-let lastSwitchAt = 0;
+    <header class="topBar">
+      <button id="menuButton" class="ghostButton hiddenControl" type="button">アイテム</button>
+      <button id="qrButton" class="ghostButton hiddenControl" type="button">QRを読む</button>
+    </header>
 
-async function loadEarAsset(asset) {
-  return new Promise((resolve) => {
-    const image = new Image();
-    image.onload = () => {
-      const offscreenCanvas = document.createElement("canvas");
-      const offscreenCtx = offscreenCanvas.getContext("2d");
-      offscreenCanvas.width = image.naturalWidth;
-      offscreenCanvas.height = image.naturalHeight;
-      offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-      offscreenCtx.drawImage(image, 0, 0);
+    <div class="bottomBar">
+      <button id="captureButton" class="captureButton hiddenControl" type="button" aria-label="しゃしんをとる" title="しゃしんをとる"></button>
+      <button id="switchButton" class="iconButton hiddenControl" type="button" aria-label="カメラを切り替える" title="カメラを切り替える">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 5 6.5 7.5 9 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 14 17.5 16.5 15 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 7.5h6a4 4 0 0 1 4 4V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M17 16.5h-6a4 4 0 0 1-4-4V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M10 4h4l1.2 1.5H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.8L10 4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
 
-      const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-      const { data } = imageData;
+    <aside id="pickerPanel" class="pickerPanel hiddenPanel" aria-hidden="true">
+      <div class="panelHeader">
+        <div>
+          <div class="panelTitle">アイテムえらび</div>
+          <div class="panelSubtitle">集めたアイテムからえらんでね</div>
+        </div>
+        <button id="closePickerButton" class="closeButton" type="button" aria-label="閉じる">×</button>
+      </div>
 
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
+      <section class="pickerSection">
+        <div class="sectionTitle">顔アクセ</div>
+        <div id="faceAccessoryOptions" class="optionGrid"></div>
+      </section>
 
-        if (r < 20 && g < 20 && b < 20) {
-          data[i + 3] = 0;
-        }
-      }
+      <section class="pickerSection">
+        <div class="sectionTitle">キャラ</div>
+        <div id="characterOptions" class="optionGrid"></div>
+      </section>
 
-      offscreenCtx.putImageData(imageData, 0, 0);
-      resolve({
-        canvas: offscreenCanvas,
-        width: image.naturalWidth,
-        height: image.naturalHeight,
-        src: asset.src,
-        scale: asset.scale ?? 1,
-        offsetX: asset.offsetX ?? 0,
-        offsetY: asset.offsetY ?? 0,
-        angleScale: asset.angleScale ?? 1,
-        angleOffset: asset.angleOffset ?? 0
-      });
-    };
-    image.onerror = () => resolve(null);
-    image.src = asset.src;
-  });
-}
+      <section class="pickerSection">
+        <div class="sectionTitle">フレーム</div>
+        <div id="frameOptions" class="optionGrid"></div>
+      </section>
+    </aside>
 
-async function loadEarAssets() {
-  for (const asset of earAssets) {
-    const processedAsset = await loadEarAsset(asset);
-    if (processedAsset) {
-      processedEars.push(processedAsset);
-    }
-  }
-}
+    <div id="qrPanel" class="qrPanel hiddenPanel" aria-hidden="true">
+      <video id="qrVideo" autoplay playsinline muted></video>
+      <div class="qrOverlay">
+        <div class="qrHeader">
+          <div>
+            <div class="panelTitle">QRを読む</div>
+            <div class="panelSubtitle">会場のQRコードをかざしてね</div>
+          </div>
+          <button id="closeQrButton" class="closeButton lightButton" type="button" aria-label="閉じる">×</button>
+        </div>
+        <div class="qrGuide"></div>
+        <div id="qrStatus" class="qrStatus">QRをよみとり中…</div>
+      </div>
+    </div>
 
-function showStatus(message) {
-  statusText.textContent = message;
-  status.classList.remove("hidden");
-}
+    <div id="toast" class="toast" aria-live="polite"></div>
+  </div>
 
-function hideStatus() {
-  status.classList.add("hidden");
-}
-
-function updateCameraModeUi() {
-  const mirrored = currentFacingMode === "user";
-  video.classList.toggle("mirror", mirrored);
-  canvas.classList.toggle("mirror", mirrored);
-  const label = mirrored ? "うしろカメラに切り替える" : "まえカメラに切り替える";
-  switchButton.setAttribute("aria-label", label);
-  switchButton.setAttribute("title", label);
-}
-
-function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add("visible");
-
-  if (toastTimeoutId) {
-    clearTimeout(toastTimeoutId);
-  }
-
-  toastTimeoutId = setTimeout(() => {
-    toast.classList.remove("visible");
-    toastTimeoutId = null;
-  }, 1800);
-}
-
-const faceMesh = new FaceMesh({
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-});
-
-faceMesh.setOptions({
-  maxNumFaces: 1,
-  refineLandmarks: true,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5
-});
-
-faceMesh.onResults((results) => {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-  lastFaceBounds = null;
-
-  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-    const face = results.multiFaceLandmarks[0];
-    const leftTemple = face[234];
-    const rightTemple = face[454];
-    const forehead = face[10];
-    const chin = face[152];
-
-    const leftX = leftTemple.x * canvas.width;
-    const leftY = leftTemple.y * canvas.height;
-    const rightX = rightTemple.x * canvas.width;
-    const rightY = rightTemple.y * canvas.height;
-    const foreheadX = forehead.x * canvas.width;
-    const foreheadY = forehead.y * canvas.height;
-    const chinY = chin.y * canvas.height;
-
-    const dx = rightX - leftX;
-    const dy = rightY - leftY;
-    const headWidth = Math.hypot(dx, dy);
-    const headHeight = Math.max(chinY - foreheadY, headWidth * 0.9);
-    const angle = Math.atan2(dy, dx);
-    const allX = face.map((point) => point.x);
-    const allY = face.map((point) => point.y);
-    const minX = Math.min(...allX);
-    const maxX = Math.max(...allX);
-    const minY = Math.min(...allY);
-    const maxY = Math.max(...allY);
-    const widthPad = (maxX - minX) * 0.45;
-    const topPad = (maxY - minY) * 1.1;
-    const bottomPad = (maxY - minY) * 0.2;
-    lastFaceBounds = {
-      left: Math.max(0, minX - widthPad),
-      right: Math.min(1, maxX + widthPad),
-      top: Math.max(0, minY - topPad),
-      bottom: Math.min(1, maxY + bottomPad)
-    };
-
-    const baseEarWidth = headWidth * 2.35;
-    const currentEar = processedEars[currentEarIndex];
-    const earWidth = baseEarWidth * (currentEar?.scale ?? 1);
-    const earHeight = earWidth * ((currentEar?.height / currentEar?.width) || 0.68);
-    const centerX = foreheadX + headWidth * (currentEar?.offsetX ?? 0);
-    const centerY = foreheadY - headHeight * (0.48 + (currentEar?.offsetY ?? 0));
-
-    if (currentEar) {
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate((angle * (currentEar.angleScale ?? 1)) + (currentEar.angleOffset ?? 0));
-      ctx.drawImage(currentEar.canvas, -earWidth / 2, -earHeight / 2, earWidth, earHeight);
-      ctx.restore();
-    }
-  }
-});
-
-async function renderLoop() {
-  if (video.readyState >= 2 && !isSending) {
-    isSending = true;
-    try {
-      await faceMesh.send({ image: video });
-    } finally {
-      isSending = false;
-    }
-  }
-
-  animationFrameId = requestAnimationFrame(renderLoop);
-}
-
-async function startCamera(mode = currentFacingMode) {
-  startButton.disabled = true;
-  switchButton.disabled = true;
-  captureButton.disabled = true;
-  currentFacingMode = mode;
-  updateCameraModeUi();
-  showStatus("今、カメラのじゅんび中だよ。出てきたまどで「きょか」してね");
-
-  try {
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-    }
-
-    if (currentStream) {
-      currentStream.getTracks().forEach((track) => track.stop());
-      currentStream = null;
-    }
-
-    currentStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: mode }, width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: false
-    });
-
-    video.srcObject = currentStream;
-    await video.play();
-    hideStatus();
-    switchButton.classList.add("visible");
-    captureButton.classList.add("visible");
-    switchButton.disabled = false;
-    captureButton.disabled = false;
-    animationFrameId = requestAnimationFrame(renderLoop);
-  } catch (error) {
-    startButton.disabled = false;
-    switchButton.disabled = false;
-    captureButton.disabled = false;
-    showStatus("カメラをつけられなかったよ。Chrome か Safari で開いて、カメラをつかえるようにしてから、もう一度押してね");
-  }
-}
-
-function savePhoto() {
-  if (!canvas.width || !canvas.height) {
-    return;
-  }
-
-  const imageUrl = canvas.toDataURL("image/png");
-  const link = document.createElement("a");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  link.href = imageUrl;
-  link.download = `usamimi-ar-${timestamp}.png`;
-  link.click();
-  showToast("しゃしんを ほぞんしたよ");
-}
-
-function chooseRandomEarIndex() {
-  if (processedEars.length <= 1) {
-    return currentEarIndex;
-  }
-
-  let nextIndex = currentEarIndex;
-  while (nextIndex === currentEarIndex) {
-    nextIndex = Math.floor(Math.random() * processedEars.length);
-  }
-  return nextIndex;
-}
-
-function handleFaceTap(event) {
-  if (!lastFaceBounds || processedEars.length <= 1) {
-    return;
-  }
-
-  const now = Date.now();
-  if (now - lastSwitchAt < 400) {
-    return;
-  }
-
-  lastSwitchAt = now;
-  currentEarIndex = chooseRandomEarIndex();
-  showToast("みみが かわったよ");
-}
-
-function isControlTarget(target) {
-  return target instanceof Element && Boolean(target.closest("#startButton, #switchButton, #captureButton, #status"));
-}
-
-function stopEvent(event) {
-  event.preventDefault();
-  event.stopPropagation();
-}
-
-loadEarAssets();
-
-startButton.addEventListener("pointerup", (event) => {
-  stopEvent(event);
-  startCamera();
-});
-
-switchButton.addEventListener("pointerup", async (event) => {
-  stopEvent(event);
-  const nextMode = currentFacingMode === "user" ? "environment" : "user";
-  await startCamera(nextMode);
-});
-
-captureButton.addEventListener("pointerup", (event) => {
-  stopEvent(event);
-  savePhoto();
-});
-
-document.addEventListener("click", (event) => {
-  if (isControlTarget(event.target)) {
-    return;
-  }
-  handleFaceTap(event);
-});
-
-document.addEventListener("touchend", (event) => {
-  if (isControlTarget(event.target)) {
-    return;
-  }
-  stopEvent(event);
-  handleFaceTap(event);
-}, { passive: false });
-</script>
-
+  <script src="app.js"></script>
 </body>
 </html>

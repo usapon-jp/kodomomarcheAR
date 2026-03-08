@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="a" x1="50%" x2="50%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD9B3"/>
+      <stop offset="100%" stop-color="#F6A97B"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <rect width="1080" height="1920" stroke="url(#a)" stroke-width="38" rx="48"/>
+    <rect x="56" y="56" width="968" height="1808" stroke="#FFF6EE" stroke-width="10" rx="38"/>
+    <path fill="#FFF6EE" d="M302 120c-20 0-36 16-36 36v66c0 20 16 36 36 36h476c20 0 36-16 36-36v-66c0-20-16-36-36-36H302Z"/>
+    <text x="540" y="198" fill="#8C4E34" font-family="Hiragino Sans, Yu Gothic, sans-serif" font-size="62" font-weight="700" text-anchor="middle">こどもマルシェ</text>
+    <g transform="translate(112 1646)" fill="#FFE0EE">
+      <path d="M92 0c42 0 76 34 76 76 0 56-76 120-76 120S16 132 16 76C16 34 50 0 92 0Z"/>
+      <path d="M764 0c42 0 76 34 76 76 0 56-76 120-76 120s-76-64-76-120c0-42 34-76 76-76Z"/>
+    </g>
+    <g fill="#FFF4CC">
+      <circle cx="144" cy="316" r="22"/>
+      <circle cx="936" cy="316" r="22"/>
+      <circle cx="176" cy="1550" r="16"/>
+      <circle cx="904" cy="1550" r="16"/>
+    </g>
+  </g>
+</svg>
