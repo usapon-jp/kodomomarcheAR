@@ -193,9 +193,9 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   min-height: 100%;
-  padding: 38px 22px calc(28px + env(safe-area-inset-bottom, 0px));
+  padding: 28px 22px calc(18px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
@@ -207,7 +207,7 @@ canvas {
 }
 
 .homeTitleTop {
-  font-size: 25px;
+  font-size: 23px;
   font-weight: 900;
   letter-spacing: 0.06em;
   color: #ffe9a9;
@@ -217,23 +217,24 @@ canvas {
 }
 
 .homeTitleMain {
-  margin: 10px 0 0;
-  font-size: clamp(46px, 8.9vw, 74px);
+  margin: 8px 0 0;
+  font-size: clamp(40px, 8vw, 66px);
   line-height: 0.98;
   font-weight: 900;
   letter-spacing: 0.02em;
   color: #fffcea;
-  -webkit-text-stroke: 5px #b97a2b;
-  paint-order: stroke fill;
   text-shadow:
-    0 5px 0 rgba(148, 97, 34, 0.92),
-    0 9px 0 rgba(121, 83, 29, 0.52),
-    0 18px 28px rgba(87, 63, 31, 0.24);
+    -2px -2px 0 #bf822f,
+    2px -2px 0 #bf822f,
+    -2px 2px 0 #bf822f,
+    2px 2px 0 #bf822f,
+    0 4px 0 rgba(148, 97, 34, 0.9),
+    0 10px 20px rgba(87, 63, 31, 0.18);
 }
 
 .homeStartButton {
-  width: min(100%, 520px);
-  padding: 9px;
+  width: min(100%, 500px);
+  padding: 8px;
   border-radius: 999px;
   background:
     linear-gradient(180deg, #f5f6b6 0%, #d8ef72 10%, #6fb23b 52%, #3d7428 100%);
@@ -260,7 +261,7 @@ canvas {
 }
 
 .homeStartInner {
-  min-height: 124px;
+  min-height: 100px;
   border-radius: 999px;
   background:
     radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.38), transparent 12%),
@@ -278,7 +279,7 @@ canvas {
 }
 
 .homeStartSmall {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: 0.14em;
   text-shadow: 0 2px 0 rgba(77, 109, 28, 0.72);
@@ -286,15 +287,15 @@ canvas {
 
 .homeStartLarge {
   margin-top: 4px;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 900;
   line-height: 1.08;
   text-shadow: 0 2px 0 rgba(77, 109, 28, 0.72);
 }
 
 .homeStartArrow {
-  width: 76px;
-  min-height: 124px;
+  width: 68px;
+  min-height: 100px;
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -302,7 +303,7 @@ canvas {
   background:
     linear-gradient(180deg, rgba(255, 248, 188, 0.98), rgba(252, 223, 96, 0.98));
   color: #9f8b1f;
-  font-size: 38px;
+  font-size: 32px;
   text-shadow: 0 2px 0 rgba(255, 255, 255, 0.65);
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.8),
@@ -313,13 +314,13 @@ canvas {
   width: min(100%, 560px);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .homeMenuButton {
   width: 100%;
-  min-height: 92px;
-  padding: 18px 22px;
+  min-height: 80px;
+  padding: 14px 20px;
   border-radius: 24px;
   background:
     radial-gradient(circle at 86% 20%, rgba(255, 255, 255, 0.46), transparent 16%),
@@ -353,7 +354,7 @@ canvas {
 }
 
 .homeMenuLabel {
-  font-size: clamp(23px, 4.9vw, 35px);
+  font-size: clamp(21px, 4.6vw, 31px);
   font-weight: 900;
   line-height: 1.15;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
@@ -367,8 +368,8 @@ canvas {
 
 .homeProgressCard {
   width: min(100%, 560px);
-  margin-top: 6px;
-  padding: 14px 16px;
+  margin-top: 2px;
+  padding: 12px 14px;
   border-radius: 22px;
   background:
     linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(246, 232, 203, 0.94));
@@ -385,7 +386,7 @@ canvas {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: clamp(18px, 4vw, 28px);
+  font-size: clamp(17px, 3.8vw, 24px);
   font-weight: 900;
 }
 
@@ -396,8 +397,8 @@ canvas {
 }
 
 .homeProgressBar {
-  margin-top: 10px;
-  height: 18px;
+  margin-top: 8px;
+  height: 16px;
   border-radius: 999px;
   background:
     linear-gradient(180deg, rgba(109, 87, 56, 0.12), rgba(109, 87, 56, 0.04));
@@ -415,10 +416,26 @@ canvas {
     inset 0 2px 0 rgba(234, 255, 178, 0.58),
     0 0 10px rgba(173, 223, 82, 0.34);
   transition: width 180ms ease;
+  position: relative;
+}
+
+.homeProgressFill::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe87c, #efc42b);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.78),
+    0 2px 6px rgba(140, 101, 18, 0.28);
+  transform: translateY(-50%);
 }
 
 .homeMascotRow {
-  margin-top: auto;
+  margin-top: 8px;
   width: min(100%, 620px);
   display: flex;
   align-items: flex-end;
@@ -428,13 +445,13 @@ canvas {
 
 .homeSpeech {
   max-width: 52%;
-  padding: 20px 24px;
+  padding: 18px 22px;
   border-radius: 34px;
   background:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.72), transparent 22%),
     linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(255, 247, 233, 0.96));
   color: #75421a;
-  font-size: clamp(24px, 4.4vw, 35px);
+  font-size: clamp(22px, 4.1vw, 31px);
   font-weight: 900;
   line-height: 1.2;
   box-shadow:
@@ -448,8 +465,8 @@ canvas {
 .homeSpeech::after {
   content: "";
   position: absolute;
-  right: 34px;
-  bottom: -16px;
+  right: 28px;
+  bottom: -14px;
   width: 34px;
   height: 24px;
   background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 244, 225, 0.94));
@@ -460,7 +477,7 @@ canvas {
 }
 
 .homeMascot {
-  width: min(40vw, 250px);
+  width: min(36vw, 214px);
   object-fit: contain;
   filter: drop-shadow(0 18px 28px rgba(65, 48, 24, 0.24));
 }
@@ -673,41 +690,48 @@ canvas {
 
 @media (max-width: 640px) {
   .homeContent {
-    gap: 18px;
-    padding: 26px 14px calc(20px + env(safe-area-inset-bottom, 0px));
+    gap: 14px;
+    padding: 22px 12px calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
   .homeTitleTop {
-    font-size: 21px;
+    font-size: 18px;
   }
 
   .homeTitleMain {
-    margin-top: 8px;
-    font-size: clamp(34px, 9.6vw, 52px);
-    -webkit-text-stroke: 4px #b97a2b;
+    margin-top: 6px;
+    font-size: clamp(30px, 9.2vw, 46px);
+    text-shadow:
+      -1.5px -1.5px 0 #bf822f,
+      1.5px -1.5px 0 #bf822f,
+      -1.5px 1.5px 0 #bf822f,
+      1.5px 1.5px 0 #bf822f,
+      0 3px 0 rgba(148, 97, 34, 0.9),
+      0 8px 14px rgba(87, 63, 31, 0.18);
   }
 
   .homeStartButton {
-    padding: 8px;
+    width: min(100%, 430px);
+    padding: 7px;
   }
 
   .homeStartInner,
   .homeStartArrow {
-    min-height: 102px;
+    min-height: 84px;
   }
 
   .homeStartArrow {
-    width: 62px;
-    font-size: 30px;
+    width: 58px;
+    font-size: 26px;
   }
 
   .homeStartLarge {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   .homeMenuButton {
-    min-height: 84px;
-    padding: 16px 18px;
+    min-height: 70px;
+    padding: 12px 16px;
     grid-template-columns: 50px 1fr 20px;
   }
 
@@ -718,29 +742,31 @@ canvas {
   }
 
   .homeMenuLabel {
-    font-size: 24px;
-  }
-
-  .homeProgressHeader {
     font-size: 20px;
   }
 
+  .homeProgressHeader {
+    font-size: 16px;
+  }
+
   .homeProgressBar {
-    height: 16px;
+    height: 14px;
   }
 
   .homeSpeech {
     max-width: 56%;
-    padding: 16px 18px;
-    font-size: 20px;
+    padding: 14px 16px;
+    font-size: 18px;
   }
 
   .homeSpeech::after {
-    right: 22px;
+    right: 18px;
+    width: 24px;
+    height: 16px;
   }
 
   .homeMascot {
-    width: min(38vw, 186px);
+    width: min(34vw, 154px);
   }
 
   .optionGrid {
