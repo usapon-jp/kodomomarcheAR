@@ -6,6 +6,18 @@ html, body {
   font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
 }
 
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   overflow: hidden;
 }
@@ -67,7 +79,8 @@ canvas {
 .optionButton,
 .captureButton,
 .homeStartButton,
-.homeMenuButton {
+.homeMenuButton,
+.homeImageButton {
   border: 0;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -141,8 +154,8 @@ canvas {
 .homeBackdrop {
   background:
     linear-gradient(180deg, rgba(161, 214, 255, 0.28), rgba(255, 238, 206, 0.2)),
-    url("assets/background/background_venue_01.png") center center / cover no-repeat;
-  filter: blur(12px) saturate(1.06) brightness(1.02);
+    url("assets/home/home_background_qr_rally_01.jpg") center center / cover no-repeat;
+  filter: blur(10px) saturate(1.03) brightness(1.04);
   transform: scale(1.12);
 }
 
@@ -199,210 +212,91 @@ canvas {
   box-sizing: border-box;
 }
 
-.homeTitleWrap {
-  margin-top: 4px;
-  text-align: center;
-  color: #fff9ea;
-  position: relative;
+.homeTitleImage {
+  width: min(88vw, 620px);
+  margin-top: 6px;
+  filter: drop-shadow(0 10px 22px rgba(131, 93, 38, 0.18));
 }
 
-.homeTitleTop {
-  font-size: 23px;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  color: #ffe9a9;
-  text-shadow:
-    0 2px 0 rgba(196, 140, 44, 0.9),
-    0 8px 20px rgba(104, 76, 31, 0.22);
+.homeImageButton {
+  display: block;
+  width: 100%;
+  background: transparent;
+  padding: 0;
+  transform: translateY(0);
+  transition: transform 120ms ease, filter 120ms ease;
 }
 
-.homeTitleMain {
-  margin: 8px 0 0;
-  font-size: clamp(40px, 8vw, 66px);
-  line-height: 0.98;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  color: #fffcea;
-  text-shadow:
-    -2px -2px 0 #bf822f,
-    2px -2px 0 #bf822f,
-    -2px 2px 0 #bf822f,
-    2px 2px 0 #bf822f,
-    0 4px 0 rgba(148, 97, 34, 0.9),
-    0 10px 20px rgba(87, 63, 31, 0.18);
+.homeImageButton img {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.homeImageButton:active {
+  transform: translateY(4px);
 }
 
 .homeStartButton {
-  width: min(100%, 500px);
-  padding: 8px;
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, #f5f6b6 0%, #d8ef72 10%, #6fb23b 52%, #3d7428 100%);
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -4px 0 rgba(65, 114, 34, 0.68),
-    0 12px 0 rgba(57, 109, 38, 0.56),
-    0 20px 34px rgba(44, 78, 24, 0.34);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 8px;
-  transform: translateY(0);
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+  width: min(100%, 492px);
+  filter: drop-shadow(0 18px 22px rgba(62, 99, 40, 0.24));
 }
 
 .homeStartButton:active {
-  transform: translateY(4px);
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -3px 0 rgba(65, 114, 34, 0.62),
-    0 8px 0 rgba(57, 109, 38, 0.5),
-    0 14px 22px rgba(44, 78, 24, 0.28);
-}
-
-.homeStartInner {
-  min-height: 100px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.38), transparent 12%),
-    radial-gradient(circle at 78% 30%, rgba(255, 255, 255, 0.18), transparent 16%),
-    linear-gradient(180deg, #94d04e 0%, #63aa38 18%, #4d9631 52%, #397727 100%);
-  box-shadow:
-    inset 0 5px 0 rgba(243, 255, 210, 0.52),
-    inset 0 -8px 0 rgba(41, 88, 29, 0.42);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 26px;
-  color: #fffcf2;
-}
-
-.homeStartSmall {
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-shadow: 0 2px 0 rgba(77, 109, 28, 0.72);
-}
-
-.homeStartLarge {
-  margin-top: 4px;
-  font-size: 30px;
-  font-weight: 900;
-  line-height: 1.08;
-  text-shadow: 0 2px 0 rgba(77, 109, 28, 0.72);
-}
-
-.homeStartArrow {
-  width: 68px;
-  min-height: 100px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 188, 0.98), rgba(252, 223, 96, 0.98));
-  color: #9f8b1f;
-  font-size: 32px;
-  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.65);
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -4px 0 rgba(194, 169, 44, 0.62);
+  filter: drop-shadow(0 12px 16px rgba(62, 99, 40, 0.22));
 }
 
 .homeMenuList {
-  width: min(100%, 560px);
+  width: min(100%, 580px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .homeMenuButton {
   width: 100%;
-  min-height: 80px;
-  padding: 14px 20px;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 86% 20%, rgba(255, 255, 255, 0.46), transparent 16%),
-    linear-gradient(180deg, rgba(255, 254, 248, 0.98), rgba(244, 232, 206, 0.96));
-  color: #834818;
-  box-shadow:
-    inset 0 0 0 3px rgba(223, 177, 86, 0.92),
-    inset 0 0 0 8px rgba(255, 252, 244, 0.78),
-    inset 0 -6px 0 rgba(220, 201, 157, 0.44),
-    0 10px 0 rgba(190, 151, 78, 0.46),
-    0 18px 28px rgba(111, 80, 34, 0.2);
-  display: grid;
-  grid-template-columns: 56px 1fr 24px;
-  align-items: center;
-  gap: 14px;
-  text-align: left;
-}
-
-.homeMenuIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff8eb, #f2dfb7);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.84),
-    0 4px 10px rgba(137, 98, 48, 0.12);
-  font-size: 31px;
-}
-
-.homeMenuLabel {
-  font-size: clamp(21px, 4.6vw, 31px);
-  font-weight: 900;
-  line-height: 1.15;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-
-.homeMenuArrow {
-  font-size: 42px;
-  line-height: 1;
-  color: #bb9158;
+  filter: drop-shadow(0 12px 18px rgba(145, 111, 59, 0.18));
 }
 
 .homeProgressCard {
-  width: min(100%, 560px);
-  margin-top: 2px;
-  padding: 12px 14px;
-  border-radius: 22px;
-  background:
-    linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(246, 232, 203, 0.94));
-  color: #6a3e17;
-  box-shadow:
-    inset 0 0 0 3px rgba(188, 135, 69, 0.95),
-    inset 0 0 0 7px rgba(253, 247, 235, 0.92),
-    inset 0 -5px 0 rgba(206, 183, 136, 0.5),
-    0 8px 0 rgba(175, 128, 68, 0.42),
-    0 16px 26px rgba(111, 80, 34, 0.18);
+  position: relative;
+  width: min(100%, 546px);
+  margin-top: 4px;
+  filter: drop-shadow(0 10px 16px rgba(124, 84, 41, 0.18));
 }
 
-.homeProgressHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: clamp(17px, 3.8vw, 24px);
+.homeProgressImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.homeProgressOverlay {
+  position: absolute;
+  inset: 0;
+}
+
+#homeProgressText {
+  position: absolute;
+  left: 22%;
+  top: 22%;
+  color: #6f4116;
+  font-size: clamp(22px, 4vw, 30px);
   font-weight: 900;
-}
-
-.homeProgressIcon {
-  color: #3d8a3f;
-  font-size: 28px;
-  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(255, 251, 241, 0.92);
 }
 
 .homeProgressBar {
-  margin-top: 8px;
-  height: 16px;
+  position: absolute;
+  right: 7.6%;
+  top: 38%;
+  width: 25.5%;
+  height: 22%;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(109, 87, 56, 0.12), rgba(109, 87, 56, 0.04));
-  box-shadow: inset 0 2px 4px rgba(84, 62, 29, 0.14);
+  background: rgba(104, 88, 40, 0.1);
+  box-shadow: inset 0 2px 4px rgba(84, 62, 29, 0.12);
   overflow: hidden;
 }
 
@@ -410,11 +304,8 @@ canvas {
   width: 0;
   height: 100%;
   border-radius: 999px;
-  background:
-    linear-gradient(90deg, #78be3e 0%, #bde75a 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(234, 255, 178, 0.58),
-    0 0 10px rgba(173, 223, 82, 0.34);
+  background: linear-gradient(90deg, #6fae34 0%, #c4e65f 100%);
+  box-shadow: inset 0 2px 0 rgba(239, 255, 196, 0.74);
   transition: width 180ms ease;
   position: relative;
 }
@@ -422,65 +313,23 @@ canvas {
 .homeProgressFill::after {
   content: "";
   position: absolute;
-  right: -10px;
+  right: -8px;
   top: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   background: linear-gradient(180deg, #ffe87c, #efc42b);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.78),
-    0 2px 6px rgba(140, 101, 18, 0.28);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.74), 0 2px 5px rgba(140, 101, 18, 0.24);
   transform: translateY(-50%);
 }
 
-.homeMascotRow {
+.homeSpeechImage {
+  width: min(58vw, 352px);
   margin-top: 8px;
-  width: min(100%, 620px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
+  margin-right: auto;
+  filter: drop-shadow(0 12px 16px rgba(137, 96, 46, 0.12));
 }
 
-.homeSpeech {
-  max-width: 52%;
-  padding: 18px 22px;
-  border-radius: 34px;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.72), transparent 22%),
-    linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(255, 247, 233, 0.96));
-  color: #75421a;
-  font-size: clamp(22px, 4.1vw, 31px);
-  font-weight: 900;
-  line-height: 1.2;
-  box-shadow:
-    inset 0 0 0 3px rgba(214, 178, 107, 0.88),
-    inset 0 0 0 8px rgba(255, 251, 242, 0.82),
-    0 10px 0 rgba(186, 142, 73, 0.34),
-    0 16px 26px rgba(123, 82, 45, 0.16);
-  position: relative;
-}
-
-.homeSpeech::after {
-  content: "";
-  position: absolute;
-  right: 28px;
-  bottom: -14px;
-  width: 34px;
-  height: 24px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 244, 225, 0.94));
-  border-right: 3px solid rgba(214, 178, 107, 0.88);
-  border-bottom: 3px solid rgba(214, 178, 107, 0.88);
-  border-bottom-right-radius: 18px;
-  transform: skewX(24deg);
-}
-
-.homeMascot {
-  width: min(36vw, 214px);
-  object-fit: contain;
-  filter: drop-shadow(0 18px 28px rgba(65, 48, 24, 0.24));
-}
 
 .pickerPanel,
 .qrPanel {
@@ -694,79 +543,43 @@ canvas {
     padding: 22px 12px calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
-  .homeTitleTop {
-    font-size: 18px;
-  }
-
-  .homeTitleMain {
-    margin-top: 6px;
-    font-size: clamp(30px, 9.2vw, 46px);
-    text-shadow:
-      -1.5px -1.5px 0 #bf822f,
-      1.5px -1.5px 0 #bf822f,
-      -1.5px 1.5px 0 #bf822f,
-      1.5px 1.5px 0 #bf822f,
-      0 3px 0 rgba(148, 97, 34, 0.9),
-      0 8px 14px rgba(87, 63, 31, 0.18);
+  .homeTitleImage {
+    width: min(92vw, 560px);
   }
 
   .homeStartButton {
-    width: min(100%, 430px);
-    padding: 7px;
+    width: min(100%, 448px);
   }
 
-  .homeStartInner,
-  .homeStartArrow {
-    min-height: 84px;
+  .homeMenuList {
+    gap: 12px;
   }
 
-  .homeStartArrow {
-    width: 58px;
-    font-size: 26px;
+  .homeProgressCard {
+    width: min(100%, 458px);
   }
 
-  .homeStartLarge {
-    font-size: 26px;
-  }
-
-  .homeMenuButton {
-    min-height: 70px;
-    padding: 12px 16px;
-    grid-template-columns: 50px 1fr 20px;
-  }
-
-  .homeMenuIcon {
-    width: 50px;
-    height: 50px;
-    font-size: 27px;
-  }
-
-  .homeMenuLabel {
-    font-size: 20px;
-  }
-
-  .homeProgressHeader {
-    font-size: 16px;
+  #homeProgressText {
+    left: 22%;
+    top: 20%;
+    font-size: clamp(19px, 4.4vw, 25px);
   }
 
   .homeProgressBar {
+    right: 7.6%;
+    top: 38%;
+    width: 26%;
+    height: 22%;
+  }
+
+  .homeProgressFill::after {
+    width: 14px;
     height: 14px;
+    right: -7px;
   }
 
-  .homeSpeech {
-    max-width: 56%;
-    padding: 14px 16px;
-    font-size: 18px;
-  }
-
-  .homeSpeech::after {
-    right: 18px;
-    width: 24px;
-    height: 16px;
-  }
-
-  .homeMascot {
-    width: min(34vw, 154px);
+  .homeSpeechImage {
+    width: min(53vw, 292px);
   }
 
   .optionGrid {

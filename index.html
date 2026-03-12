@@ -23,51 +23,39 @@
         <span class="sparkle sparkleE"></span>
       </div>
       <div class="homeContent">
-        <div class="homeTitleWrap">
-          <div class="homeTitleTop">こどもマルシェ</div>
-          <h1 class="homeTitleMain">QRコードラリー</h1>
-        </div>
+        <img class="homeTitleImage" src="assets/home/home_title_qr_rally_01.png" alt="こどもマルシェ QRコードラリー">
 
-        <button id="startQrButton" class="homeStartButton" type="button">
-          <span class="homeStartInner">
-            <span class="homeStartSmall">START</span>
-            <span class="homeStartLarge">QRをさがす</span>
-          </span>
-          <span class="homeStartArrow">▶</span>
+        <button id="startQrButton" class="homeImageButton homeStartButton" type="button" aria-label="START QRをさがす">
+          <img src="assets/home/home_start_qr_rally_01.png" alt="">
+          <span class="srOnly">START QRをさがす</span>
         </button>
 
         <div class="homeMenuList">
-          <button id="openBuilderButton" class="homeMenuButton" type="button">
-            <span class="homeMenuIcon">🎨</span>
-            <span class="homeMenuLabel">フレームをつくる</span>
-            <span class="homeMenuArrow">›</span>
+          <button id="openBuilderButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームをつくる">
+            <img src="assets/home/home_menu_builder_01.png" alt="">
+            <span class="srOnly">フレームをつくる</span>
           </button>
-          <button id="openCameraButton" class="homeMenuButton" type="button">
-            <span class="homeMenuIcon">📷</span>
-            <span class="homeMenuLabel">写真をとる</span>
-            <span class="homeMenuArrow">›</span>
+          <button id="openCameraButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームで写真">
+            <img src="assets/home/home_menu_camera_01.png" alt="">
+            <span class="srOnly">フレームで写真</span>
           </button>
-          <button id="openCollectionButton" class="homeMenuButton" type="button">
-            <span class="homeMenuIcon">🎒</span>
-            <span class="homeMenuLabel">コレクション</span>
-            <span class="homeMenuArrow">›</span>
+          <button id="openCollectionButton" class="homeImageButton homeMenuButton" type="button" aria-label="アイテムコレクション">
+            <img src="assets/home/home_menu_collection_01.png" alt="">
+            <span class="srOnly">アイテムコレクション</span>
           </button>
         </div>
 
-        <div class="homeProgressCard">
-          <div class="homeProgressHeader">
-            <span class="homeProgressIcon">▣</span>
-            <span id="homeProgressText">見つけたQR: 0 / 0</span>
-          </div>
-          <div class="homeProgressBar">
-            <div id="homeProgressFill" class="homeProgressFill"></div>
+        <div class="homeProgressCard" aria-label="QR進捗">
+          <img class="homeProgressImage" src="assets/home/home_progress_bar_01.png" alt="">
+          <div class="homeProgressOverlay">
+            <span id="homeProgressText">0 / 0</span>
+            <div class="homeProgressBar">
+              <div id="homeProgressFill" class="homeProgressFill"></div>
+            </div>
           </div>
         </div>
 
-        <div class="homeMascotRow">
-          <div class="homeSpeech">QRをさがしてね！</div>
-          <img class="homeMascot" src="assets/character/character_chick_01.png" alt="ひよこ">
-        </div>
+        <img class="homeSpeechImage" src="assets/home/home_speech_01.png" alt="QRをさがしてね！">
       </div>
     </section>
 

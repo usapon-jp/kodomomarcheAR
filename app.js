@@ -317,7 +317,7 @@ function renderCollection() {
 function updateHomeProgress() {
   const total = QR_DEFS.length;
   const found = state.readQrIds.length;
-  homeProgressText.textContent = `見つけたQR: ${found} / ${total}`;
+  homeProgressText.textContent = `${found} / ${total}`;
   homeProgressFill.style.width = `${total ? (found / total) * 100 : 0}%`;
 }
 
