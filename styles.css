@@ -153,18 +153,18 @@ canvas {
 
 .homeBackdrop {
   background:
-    linear-gradient(180deg, rgba(161, 214, 255, 0.28), rgba(255, 238, 206, 0.2)),
+    linear-gradient(180deg, rgba(150, 206, 248, 0.16), rgba(255, 235, 202, 0.08)),
     url("assets/home/home_background_qr_rally_01.jpg") center center / cover no-repeat;
-  filter: blur(10px) saturate(1.03) brightness(1.04);
-  transform: scale(1.12);
+  filter: blur(5px) saturate(1.08) brightness(0.99);
+  transform: scale(1.06);
 }
 
 .homeGlow {
   background:
-    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.62), transparent 22%),
-    radial-gradient(circle at 15% 18%, rgba(255, 246, 193, 0.54), transparent 16%),
-    radial-gradient(circle at 84% 18%, rgba(255, 240, 181, 0.5), transparent 18%),
-    linear-gradient(180deg, rgba(244, 248, 255, 0.2), rgba(255, 248, 233, 0.32));
+    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.38), transparent 22%),
+    radial-gradient(circle at 15% 18%, rgba(255, 246, 193, 0.32), transparent 16%),
+    radial-gradient(circle at 84% 18%, rgba(255, 240, 181, 0.3), transparent 18%),
+    linear-gradient(180deg, rgba(244, 248, 255, 0.08), rgba(255, 248, 233, 0.12));
 }
 
 .homeSparkles {
@@ -195,8 +195,8 @@ canvas {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.18), transparent 22%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 48%);
+    radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 48%);
   pointer-events: none;
 }
 
@@ -206,9 +206,9 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
   min-height: 100%;
-  padding: 28px 22px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 26px 22px calc(22px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
@@ -259,10 +259,15 @@ canvas {
   filter: drop-shadow(0 12px 18px rgba(145, 111, 59, 0.18));
 }
 
+.homeMenuButtonCollection {
+  width: 108%;
+  max-width: 628px;
+}
+
 .homeProgressCard {
   position: relative;
   width: min(100%, 546px);
-  margin-top: 4px;
+  margin-top: 2px;
   filter: drop-shadow(0 10px 16px rgba(124, 84, 41, 0.18));
 }
 
@@ -279,10 +284,10 @@ canvas {
 
 #homeProgressText {
   position: absolute;
-  left: 31%;
-  top: 22%;
+  left: 39.5%;
+  top: 19%;
   color: #6f4116;
-  font-size: clamp(20px, 3.7vw, 28px);
+  font-size: clamp(18px, 3.2vw, 24px);
   font-weight: 900;
   letter-spacing: 0.01em;
   text-shadow: 0 1px 0 rgba(255, 251, 241, 0.92);
@@ -290,9 +295,9 @@ canvas {
 
 .homeProgressBar {
   position: absolute;
-  right: 7.2%;
-  top: 34%;
-  width: 25.8%;
+  right: 7%;
+  top: 35%;
+  width: 26.2%;
   height: 28%;
   border-radius: 999px;
   background: rgba(104, 88, 40, 0.1);
@@ -324,10 +329,20 @@ canvas {
 }
 
 .homeSpeechImage {
-  width: min(58vw, 352px);
-  margin-top: 8px;
+  width: min(57vw, 344px);
+  margin-top: 10px;
   margin-right: auto;
   filter: drop-shadow(0 12px 16px rgba(137, 96, 46, 0.12));
+}
+
+.homeMascotOverlay {
+  position: absolute;
+  right: 14px;
+  bottom: 18px;
+  width: min(33vw, 188px);
+  object-fit: contain;
+  filter: drop-shadow(0 16px 18px rgba(92, 64, 28, 0.22));
+  pointer-events: none;
 }
 
 
@@ -539,8 +554,8 @@ canvas {
 
 @media (max-width: 640px) {
   .homeContent {
-    gap: 14px;
-    padding: 22px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+    gap: 13px;
+    padding: 22px 12px calc(18px + env(safe-area-inset-bottom, 0px));
   }
 
   .homeTitleImage {
@@ -555,20 +570,24 @@ canvas {
     gap: 12px;
   }
 
+  .homeMenuButtonCollection {
+    width: 107%;
+  }
+
   .homeProgressCard {
     width: min(100%, 458px);
   }
 
   #homeProgressText {
-    left: 31.5%;
-    top: 21%;
-    font-size: clamp(17px, 4vw, 22px);
+    left: 39.5%;
+    top: 19%;
+    font-size: clamp(15px, 3.5vw, 20px);
   }
 
   .homeProgressBar {
-    right: 7.2%;
+    right: 7%;
     top: 35%;
-    width: 26.5%;
+    width: 27%;
     height: 27%;
   }
 
@@ -579,7 +598,14 @@ canvas {
   }
 
   .homeSpeechImage {
-    width: min(53vw, 292px);
+    width: min(50vw, 270px);
+    margin-top: 6px;
+  }
+
+  .homeMascotOverlay {
+    right: 8px;
+    bottom: 28px;
+    width: min(30vw, 144px);
   }
 
   .optionGrid {
