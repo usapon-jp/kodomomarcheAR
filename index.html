@@ -15,6 +15,13 @@
     <section id="homeScreen" class="homeScreen">
       <div class="homeBackdrop"></div>
       <div class="homeGlow"></div>
+      <div class="homeSparkles" aria-hidden="true">
+        <span class="sparkle sparkleA"></span>
+        <span class="sparkle sparkleB"></span>
+        <span class="sparkle sparkleC"></span>
+        <span class="sparkle sparkleD"></span>
+        <span class="sparkle sparkleE"></span>
+      </div>
       <div class="homeContent">
         <div class="homeTitleWrap">
           <div class="homeTitleTop">こどもマルシェ</div>
@@ -22,8 +29,11 @@
         </div>
 
         <button id="startQrButton" class="homeStartButton" type="button">
-          <span class="homeStartSmall">START</span>
-          <span class="homeStartLarge">QRをさがす</span>
+          <span class="homeStartInner">
+            <span class="homeStartSmall">START</span>
+            <span class="homeStartLarge">QRをさがす</span>
+          </span>
+          <span class="homeStartArrow">▶</span>
         </button>
 
         <div class="homeMenuList">
@@ -34,12 +44,12 @@
           </button>
           <button id="openCameraButton" class="homeMenuButton" type="button">
             <span class="homeMenuIcon">📷</span>
-            <span class="homeMenuLabel">フレームで写真</span>
+            <span class="homeMenuLabel">写真をとる</span>
             <span class="homeMenuArrow">›</span>
           </button>
           <button id="openCollectionButton" class="homeMenuButton" type="button">
             <span class="homeMenuIcon">🎒</span>
-            <span class="homeMenuLabel">アイテムコレクション</span>
+            <span class="homeMenuLabel">コレクション</span>
             <span class="homeMenuArrow">›</span>
           </button>
         </div>
