@@ -733,7 +733,12 @@ async function startArCamera(mode = currentFacingMode) {
 
   try {
     currentStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: mode }, width: { ideal: 720 }, height: { ideal: 1280 } },
+      video: {
+        facingMode: { ideal: mode },
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        aspectRatio: { ideal: 4 / 3 }
+      },
       audio: false
     });
     video.srcObject = currentStream;
