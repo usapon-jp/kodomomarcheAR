@@ -12,19 +12,61 @@
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
-    <div id="status" class="statusPanel">
-      <div id="statusText" class="statusTitle">カメラをつけて、ARフォトをはじめよう</div>
-      <div class="statusBody">
-        <p>アイテムをえらんで、じぶんだけのコーデをつくれます。</p>
-        <p>右上のQRからアイテムをあつめられます。</p>
-        <p>撮った写真はダウンロードファイルに保存されます。</p>
+    <section id="homeScreen" class="homeScreen">
+      <div class="homeBackdrop"></div>
+      <div class="homeGlow"></div>
+      <div class="homeContent">
+        <div class="homeTitleWrap">
+          <div class="homeTitleTop">こどもマルシェ</div>
+          <h1 class="homeTitleMain">QRコードラリー</h1>
+        </div>
+
+        <button id="startQrButton" class="homeStartButton" type="button">
+          <span class="homeStartSmall">START</span>
+          <span class="homeStartLarge">QRをさがす</span>
+        </button>
+
+        <div class="homeMenuList">
+          <button id="openBuilderButton" class="homeMenuButton" type="button">
+            <span class="homeMenuIcon">🎨</span>
+            <span class="homeMenuLabel">フレームをつくる</span>
+            <span class="homeMenuArrow">›</span>
+          </button>
+          <button id="openCameraButton" class="homeMenuButton" type="button">
+            <span class="homeMenuIcon">📷</span>
+            <span class="homeMenuLabel">フレームで写真</span>
+            <span class="homeMenuArrow">›</span>
+          </button>
+          <button id="openCollectionButton" class="homeMenuButton" type="button">
+            <span class="homeMenuIcon">🎒</span>
+            <span class="homeMenuLabel">アイテムコレクション</span>
+            <span class="homeMenuArrow">›</span>
+          </button>
+        </div>
+
+        <div class="homeProgressCard">
+          <div class="homeProgressHeader">
+            <span class="homeProgressIcon">▣</span>
+            <span id="homeProgressText">見つけたQR: 0 / 0</span>
+          </div>
+          <div class="homeProgressBar">
+            <div id="homeProgressFill" class="homeProgressFill"></div>
+          </div>
+        </div>
+
+        <div class="homeMascotRow">
+          <div class="homeSpeech">QRをさがしてね！</div>
+          <img class="homeMascot" src="assets/character/character_chick_02.png" alt="ひよこ">
+        </div>
       </div>
-      <button id="startButton" class="primaryButton" type="button">カメラをつける</button>
-    </div>
+    </section>
 
     <header class="topBar">
-      <button id="menuButton" class="ghostButton hiddenControl" type="button">アイテム</button>
-      <button id="qrButton" class="ghostButton hiddenControl" type="button">QRを読む</button>
+      <button id="homeButton" class="ghostButton hiddenControl" type="button">ホーム</button>
+      <div class="topBarRight">
+        <button id="menuButton" class="ghostButton hiddenControl" type="button">アイテム</button>
+        <button id="qrButton" class="ghostButton hiddenControl" type="button">QRを読む</button>
+      </div>
     </header>
 
     <div class="bottomBar">
@@ -43,7 +85,7 @@
     <aside id="pickerPanel" class="pickerPanel hiddenPanel" aria-hidden="true">
       <div class="panelHeader">
         <div>
-          <div class="panelTitle">アイテムえらび</div>
+          <div class="panelTitle">フレームをつくる</div>
           <div class="panelSubtitle">集めたアイテムからえらんでね</div>
         </div>
         <button id="closePickerButton" class="closeButton" type="button" aria-label="閉じる">×</button>
@@ -73,6 +115,18 @@
         <div class="sectionTitle">スタンプ</div>
         <div id="stampOptions" class="optionGrid"></div>
       </section>
+    </aside>
+
+    <aside id="collectionPanel" class="pickerPanel hiddenPanel" aria-hidden="true">
+      <div class="panelHeader">
+        <div>
+          <div class="panelTitle">アイテムコレクション</div>
+          <div class="panelSubtitle">見つけたQRとアイテムが見られるよ</div>
+        </div>
+        <button id="closeCollectionButton" class="closeButton" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div id="collectionSummary" class="collectionSummary"></div>
+      <div id="collectionList" class="collectionList"></div>
     </aside>
 
     <div id="qrPanel" class="qrPanel hiddenPanel" aria-hidden="true">
