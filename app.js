@@ -15,7 +15,9 @@ const ITEM_DEFS = [
   { id: "character_chick_01", category: "character", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
   { id: "character_chick_02", category: "character", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
   { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true },
-  { id: "frame_flower_soft_01", category: "frame", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: true }
+  { id: "frame_flower_soft_01", category: "frame", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: true },
+  { id: "background_venue_01", category: "background", label: "かいじょう背景", src: "assets/background/background_venue_01.png", unlockedByDefault: true },
+  { id: "stamp_kodomomarche_01", category: "stamp", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.18, defaultScale: 0.34 }
 ];
 
 const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
@@ -35,6 +37,8 @@ const closePickerButton = document.getElementById("closePickerButton");
 const faceAccessoryOptions = document.getElementById("faceAccessoryOptions");
 const characterOptions = document.getElementById("characterOptions");
 const frameOptions = document.getElementById("frameOptions");
+const backgroundOptions = document.getElementById("backgroundOptions");
+const stampOptions = document.getElementById("stampOptions");
 const toast = document.getElementById("toast");
 const qrPanel = document.getElementById("qrPanel");
 const qrVideo = document.getElementById("qrVideo");
@@ -59,7 +63,10 @@ const state = {
   selectedFaceAccessoryId: null,
   selectedCharacterId: null,
   selectedFrameId: null,
-  characterPlacement: null
+  selectedBackgroundId: null,
+  selectedStampId: null,
+  characterPlacement: null,
+  stampPlacement: null
 };
 
 hydrateSelection();
@@ -96,12 +103,18 @@ function hydrateSelection() {
     state.selectedFaceAccessoryId = sanitizeSelectedId(parsed.selectedFaceAccessoryId, "faceAccessory");
     state.selectedCharacterId = sanitizeSelectedId(parsed.selectedCharacterId, "character");
     state.selectedFrameId = sanitizeSelectedId(parsed.selectedFrameId, "frame");
+    state.selectedBackgroundId = sanitizeSelectedId(parsed.selectedBackgroundId, "background");
+    state.selectedStampId = sanitizeSelectedId(parsed.selectedStampId, "stamp");
     state.characterPlacement = sanitizeCharacterPlacement(parsed.characterPlacement);
+    state.stampPlacement = sanitizeStampPlacement(parsed.stampPlacement);
   } catch {
     state.selectedFaceAccessoryId = null;
     state.selectedCharacterId = null;
     state.selectedFrameId = null;
+    state.selectedBackgroundId = null;
+    state.selectedStampId = null;
     state.characterPlacement = null;
+    state.stampPlacement = null;
   }
 }
 
@@ -126,13 +139,26 @@ function sanitizeCharacterPlacement(placement) {
   return { x: clamp(placement.x, 0.12, 0.88), y: clamp(placement.y, 0.2, 0.96) };
 }
 
+function sanitizeStampPlacement(placement) {
+  if (!placement || typeof placement !== "object") {
+    return null;
+  }
+  if (typeof placement.x !== "number" || typeof placement.y !== "number") {
+    return null;
+  }
+  return { x: clamp(placement.x, 0.1, 0.9), y: clamp(placement.y, 0.08, 0.92) };
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEYS.unlocked, JSON.stringify(state.unlockedItemIds));
   localStorage.setItem(STORAGE_KEYS.selection, JSON.stringify({
     selectedFaceAccessoryId: state.selectedFaceAccessoryId,
     selectedCharacterId: state.selectedCharacterId,
     selectedFrameId: state.selectedFrameId,
-    characterPlacement: state.characterPlacement
+    selectedBackgroundId: state.selectedBackgroundId,
+    selectedStampId: state.selectedStampId,
+    characterPlacement: state.characterPlacement,
+    stampPlacement: state.stampPlacement
   }));
 }
 
@@ -231,6 +257,19 @@ function renderSelections() {
     saveState();
     renderSelections();
   });
+
+  renderOptionButtons(backgroundOptions, "background", state.selectedBackgroundId, (itemId) => {
+    state.selectedBackgroundId = itemId;
+    saveState();
+    renderSelections();
+  });
+
+  renderOptionButtons(stampOptions, "stamp", state.selectedStampId, (itemId) => {
+    state.selectedStampId = itemId;
+    state.stampPlacement = itemId ? defaultStampPlacement(itemId) : null;
+    saveState();
+    renderSelections();
+  });
 }
 
 function defaultCharacterPlacement(itemId) {
@@ -239,6 +278,14 @@ function defaultCharacterPlacement(itemId) {
     return null;
   }
   return { x: item.defaultX ?? 0.5, y: item.defaultY ?? 0.86 };
+}
+
+function defaultStampPlacement(itemId) {
+  const item = ITEM_MAP.get(itemId);
+  if (!item) {
+    return null;
+  }
+  return { x: item.defaultX ?? 0.5, y: item.defaultY ?? 0.18 };
 }
 
 function updateCameraModeUi() {
@@ -340,37 +387,88 @@ faceMesh.onResults((results) => {
   canvas.width = video.videoWidth || canvas.width;
   canvas.height = video.videoHeight || canvas.height;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  const photoRect = getPhotoRect();
+  drawBackgroundLayer();
+  drawCameraLayer(results.image, photoRect);
   facePose = null;
 
   if (results.multiFaceLandmarks?.length) {
     const landmarks = results.multiFaceLandmarks[0];
-    facePose = computeFacePose(landmarks);
+    facePose = computeFacePose(landmarks, photoRect);
     drawFaceAccessoryLayer(facePose);
   }
 
   drawCharacterLayer();
+  drawStampLayer();
   drawFrameLayer();
 });
 
-function computeFacePose(landmarks) {
+function getPhotoRect() {
+  if (!state.selectedBackgroundId) {
+    return { left: 0, top: 0, width: canvas.width, height: canvas.height };
+  }
+
+  const horizontalPadding = canvas.width * 0.08;
+  const topPadding = canvas.height * 0.1;
+  const bottomPadding = canvas.height * 0.14;
+  return {
+    left: horizontalPadding,
+    top: topPadding,
+    width: canvas.width - (horizontalPadding * 2),
+    height: canvas.height - topPadding - bottomPadding
+  };
+}
+
+function drawBackgroundLayer() {
+  const asset = getSelectedAsset("background", state.selectedBackgroundId);
+  if (!asset) {
+    return;
+  }
+  ctx.drawImage(asset.canvas, 0, 0, canvas.width, canvas.height);
+}
+
+function drawCameraLayer(image, rect) {
+  if (!state.selectedBackgroundId) {
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const radius = Math.min(rect.width, rect.height) * 0.06;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(rect.left + radius, rect.top);
+  ctx.lineTo(rect.left + rect.width - radius, rect.top);
+  ctx.quadraticCurveTo(rect.left + rect.width, rect.top, rect.left + rect.width, rect.top + radius);
+  ctx.lineTo(rect.left + rect.width, rect.top + rect.height - radius);
+  ctx.quadraticCurveTo(rect.left + rect.width, rect.top + rect.height, rect.left + rect.width - radius, rect.top + rect.height);
+  ctx.lineTo(rect.left + radius, rect.top + rect.height);
+  ctx.quadraticCurveTo(rect.left, rect.top + rect.height, rect.left, rect.top + rect.height - radius);
+  ctx.lineTo(rect.left, rect.top + radius);
+  ctx.quadraticCurveTo(rect.left, rect.top, rect.left + radius, rect.top);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(image, rect.left, rect.top, rect.width, rect.height);
+  ctx.restore();
+}
+
+function computeFacePose(landmarks, rect) {
   const leftTemple = landmarks[234];
   const rightTemple = landmarks[454];
   const forehead = landmarks[10];
   const chin = landmarks[152];
   const leftCheek = landmarks[177];
   const rightCheek = landmarks[401];
-  const leftX = leftTemple.x * canvas.width;
-  const leftY = leftTemple.y * canvas.height;
-  const rightX = rightTemple.x * canvas.width;
-  const rightY = rightTemple.y * canvas.height;
-  const foreheadX = forehead.x * canvas.width;
-  const foreheadY = forehead.y * canvas.height;
-  const chinY = chin.y * canvas.height;
-  const leftEarX = ((leftTemple.x * 0.58) + (leftCheek.x * 0.42)) * canvas.width;
-  const leftEarY = ((leftTemple.y * 0.35) + (leftCheek.y * 0.65)) * canvas.height;
-  const rightEarX = ((rightTemple.x * 0.58) + (rightCheek.x * 0.42)) * canvas.width;
-  const rightEarY = ((rightTemple.y * 0.35) + (rightCheek.y * 0.65)) * canvas.height;
+  const leftX = rect.left + (leftTemple.x * rect.width);
+  const leftY = rect.top + (leftTemple.y * rect.height);
+  const rightX = rect.left + (rightTemple.x * rect.width);
+  const rightY = rect.top + (rightTemple.y * rect.height);
+  const foreheadX = rect.left + (forehead.x * rect.width);
+  const foreheadY = rect.top + (forehead.y * rect.height);
+  const chinY = rect.top + (chin.y * rect.height);
+  const leftEarX = rect.left + (((leftTemple.x * 0.58) + (leftCheek.x * 0.42)) * rect.width);
+  const leftEarY = rect.top + (((leftTemple.y * 0.35) + (leftCheek.y * 0.65)) * rect.height);
+  const rightEarX = rect.left + (((rightTemple.x * 0.58) + (rightCheek.x * 0.42)) * rect.width);
+  const rightEarY = rect.top + (((rightTemple.y * 0.35) + (rightCheek.y * 0.65)) * rect.height);
   const dx = rightX - leftX;
   const dy = rightY - leftY;
   const headWidth = Math.hypot(dx, dy);
@@ -455,11 +553,29 @@ function drawCharacterLayer() {
     state.characterPlacement = defaultCharacterPlacement(asset.id);
     saveState();
   }
-  const width = canvas.width * (asset.defaultScale ?? 0.28);
+  const photoRect = getPhotoRect();
+  const baseWidth = state.selectedBackgroundId ? photoRect.width : canvas.width;
+  const width = baseWidth * (asset.defaultScale ?? 0.28);
   const height = width * (asset.height / asset.width);
-  const x = state.characterPlacement.x * canvas.width;
-  const y = state.characterPlacement.y * canvas.height;
+  const x = photoRect.left + (state.characterPlacement.x * photoRect.width);
+  const y = photoRect.top + (state.characterPlacement.y * photoRect.height);
   ctx.drawImage(asset.canvas, x - width / 2, y - height, width, height);
+}
+
+function drawStampLayer() {
+  const asset = getSelectedAsset("stamp", state.selectedStampId);
+  if (!asset) {
+    return;
+  }
+  if (!state.stampPlacement) {
+    state.stampPlacement = defaultStampPlacement(asset.id);
+    saveState();
+  }
+  const width = canvas.width * (asset.defaultScale ?? 0.34);
+  const height = width * (asset.height / asset.width);
+  const x = state.stampPlacement.x * canvas.width;
+  const y = state.stampPlacement.y * canvas.height;
+  ctx.drawImage(asset.canvas, x - width / 2, y - height / 2, width, height);
 }
 
 function drawFrameLayer() {
@@ -535,11 +651,25 @@ function getCharacterBounds() {
   if (!asset || !state.characterPlacement) {
     return null;
   }
-  const width = canvas.width * (asset.defaultScale ?? 0.28);
+  const photoRect = getPhotoRect();
+  const baseWidth = state.selectedBackgroundId ? photoRect.width : canvas.width;
+  const width = baseWidth * (asset.defaultScale ?? 0.28);
   const height = width * (asset.height / asset.width);
-  const x = state.characterPlacement.x * canvas.width;
-  const y = state.characterPlacement.y * canvas.height;
+  const x = photoRect.left + (state.characterPlacement.x * photoRect.width);
+  const y = photoRect.top + (state.characterPlacement.y * photoRect.height);
   return { left: x - width / 2, right: x + width / 2, top: y - height, bottom: y };
+}
+
+function getStampBounds() {
+  const asset = getSelectedAsset("stamp", state.selectedStampId);
+  if (!asset || !state.stampPlacement) {
+    return null;
+  }
+  const width = canvas.width * (asset.defaultScale ?? 0.34);
+  const height = width * (asset.height / asset.width);
+  const x = state.stampPlacement.x * canvas.width;
+  const y = state.stampPlacement.y * canvas.height;
+  return { left: x - width / 2, right: x + width / 2, top: y - height / 2, bottom: y + height / 2 };
 }
 
 function isInsideBounds(point, bounds) {
@@ -547,6 +677,22 @@ function isInsideBounds(point, bounds) {
 }
 
 function beginCharacterDrag(event) {
+  const stampBounds = getStampBounds();
+  if (stampBounds) {
+    const point = getCanvasPointFromEvent(event);
+    if (isInsideBounds(point, stampBounds)) {
+      const centerX = state.stampPlacement.x * canvas.width;
+      const centerY = state.stampPlacement.y * canvas.height;
+      dragState = {
+        kind: "stamp",
+        offsetX: point.x - centerX,
+        offsetY: point.y - centerY
+      };
+      stopEvent(event);
+      return;
+    }
+  }
+
   const bounds = getCharacterBounds();
   if (!bounds) {
     return;
@@ -555,9 +701,11 @@ function beginCharacterDrag(event) {
   if (!isInsideBounds(point, bounds)) {
     return;
   }
-  const centerX = state.characterPlacement.x * canvas.width;
-  const bottomY = state.characterPlacement.y * canvas.height;
+  const photoRect = getPhotoRect();
+  const centerX = photoRect.left + (state.characterPlacement.x * photoRect.width);
+  const bottomY = photoRect.top + (state.characterPlacement.y * photoRect.height);
   dragState = {
+    kind: "character",
     offsetX: point.x - centerX,
     offsetY: point.y - bottomY
   };
@@ -565,13 +713,25 @@ function beginCharacterDrag(event) {
 }
 
 function moveCharacter(event) {
-  if (!dragState || !state.selectedCharacterId) {
+  if (!dragState) {
     return;
   }
   const point = getCanvasPointFromEvent(event);
+  if (dragState.kind === "stamp" && state.selectedStampId) {
+    state.stampPlacement = {
+      x: clamp((point.x - dragState.offsetX) / canvas.width, 0.1, 0.9),
+      y: clamp((point.y - dragState.offsetY) / canvas.height, 0.08, 0.92)
+    };
+    saveState();
+    return;
+  }
+  if (dragState.kind !== "character" || !state.selectedCharacterId) {
+    return;
+  }
+  const photoRect = getPhotoRect();
   state.characterPlacement = {
-    x: clamp((point.x - dragState.offsetX) / canvas.width, 0.12, 0.88),
-    y: clamp((point.y - dragState.offsetY) / canvas.height, 0.26, 0.96)
+    x: clamp((point.x - dragState.offsetX - photoRect.left) / photoRect.width, 0.12, 0.88),
+    y: clamp((point.y - dragState.offsetY - photoRect.top) / photoRect.height, 0.26, 0.96)
   };
   saveState();
 }
