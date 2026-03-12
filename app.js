@@ -4,12 +4,12 @@ const STORAGE_KEYS = {
 };
 
 const ITEM_DEFS = [
-  { id: "face_usamimi_01", category: "faceAccessory", label: "うさみみ", src: "face_usamimi_01.png", unlockedByDefault: true, scale: 1, offsetX: 0, offsetY: 0, angleScale: 1, angleOffset: 0 },
-  { id: "face_usamimi_02", category: "faceAccessory", label: "おともだち", src: "face_usamimi_02.png", unlockedByDefault: true, scale: 1.24, offsetX: -0.02, offsetY: -0.16, angleScale: 0.2, angleOffset: 0.12 },
-  { id: "face_usamimi_03", category: "faceAccessory", label: "つばさ", src: "face_usamimi_03.png", unlockedByDefault: true, scale: 0.9, offsetX: 0, offsetY: -0.22, angleScale: 1, angleOffset: 0 },
-  { id: "face_usamimi_04", category: "faceAccessory", label: "カラフル", src: "face_usamimi_04.png", unlockedByDefault: true, scale: 1.12, offsetX: 0, offsetY: -0.12, angleScale: 1, angleOffset: 0 },
-  { id: "character_molddoll_01", category: "character", label: "モールドール", src: "character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.28 },
-  { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "frame_kodomomarche_01.svg", unlockedByDefault: true }
+  { id: "face_usamimi_01", category: "faceAccessory", label: "うさみみ", src: "assets/face/face_usamimi_01.png", unlockedByDefault: true, slot: "head", scale: 1, offsetX: 0, offsetY: 0, angleScale: 1, angleOffset: 0 },
+  { id: "face_usamimi_02", category: "faceAccessory", label: "おともだち", src: "assets/face/face_usamimi_02.png", unlockedByDefault: true, slot: "head", scale: 1.24, offsetX: -0.02, offsetY: -0.16, angleScale: 0.2, angleOffset: 0.12 },
+  { id: "face_usamimi_03", category: "faceAccessory", label: "つばさ", src: "assets/face/face_usamimi_03.png", unlockedByDefault: true, slot: "head", scale: 0.9, offsetX: 0, offsetY: -0.22, angleScale: 1, angleOffset: 0 },
+  { id: "face_usamimi_04", category: "faceAccessory", label: "カラフル", src: "assets/face/face_usamimi_04.png", unlockedByDefault: true, slot: "head", scale: 1.12, offsetX: 0, offsetY: -0.12, angleScale: 1, angleOffset: 0 },
+  { id: "character_molddoll_01", category: "character", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.28 },
+  { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true }
 ];
 
 const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
@@ -334,6 +334,8 @@ function computeFacePose(landmarks) {
   const rightTemple = landmarks[454];
   const forehead = landmarks[10];
   const chin = landmarks[152];
+  const leftCheek = landmarks[177];
+  const rightCheek = landmarks[401];
   const leftX = leftTemple.x * canvas.width;
   const leftY = leftTemple.y * canvas.height;
   const rightX = rightTemple.x * canvas.width;
@@ -341,17 +343,25 @@ function computeFacePose(landmarks) {
   const foreheadX = forehead.x * canvas.width;
   const foreheadY = forehead.y * canvas.height;
   const chinY = chin.y * canvas.height;
+  const leftEarX = ((leftTemple.x * 0.58) + (leftCheek.x * 0.42)) * canvas.width;
+  const leftEarY = ((leftTemple.y * 0.35) + (leftCheek.y * 0.65)) * canvas.height;
+  const rightEarX = ((rightTemple.x * 0.58) + (rightCheek.x * 0.42)) * canvas.width;
+  const rightEarY = ((rightTemple.y * 0.35) + (rightCheek.y * 0.65)) * canvas.height;
   const dx = rightX - leftX;
   const dy = rightY - leftY;
   const headWidth = Math.hypot(dx, dy);
   const headHeight = Math.max(chinY - foreheadY, headWidth * 0.9);
   const angle = Math.atan2(dy, dx);
-  return { foreheadX, foreheadY, headWidth, headHeight, angle };
+  return { foreheadX, foreheadY, headWidth, headHeight, angle, leftEarX, leftEarY, rightEarX, rightEarY };
 }
 
 function drawFaceAccessoryLayer(pose) {
   const asset = getSelectedAsset("faceAccessory", state.selectedFaceAccessoryId);
   if (!asset || !pose) {
+    return;
+  }
+  if (asset.slot === "earPair") {
+    drawEarPairAccessoryLayer(asset, pose);
     return;
   }
   const baseWidth = pose.headWidth * 2.35;
@@ -364,6 +374,28 @@ function drawFaceAccessoryLayer(pose) {
   ctx.translate(centerX, centerY);
   ctx.rotate((pose.angle * (asset.angleScale ?? 1)) + (asset.angleOffset ?? 0));
   ctx.drawImage(asset.canvas, -width / 2, -height / 2, width, height);
+  ctx.restore();
+}
+
+function drawEarPairAccessoryLayer(asset, pose) {
+  const leftHalfWidth = asset.width / 2;
+  const baseWidth = pose.headWidth * (asset.scale ?? 0.34);
+  const drawWidth = baseWidth;
+  const drawHeight = drawWidth * (asset.height / leftHalfWidth);
+  const rotation = (pose.angle * (asset.angleScale ?? 0.35)) + (asset.angleOffset ?? 0);
+  const horizontalOffset = pose.headWidth * (asset.offsetX ?? 0);
+  const verticalOffset = pose.headHeight * (asset.offsetY ?? 0);
+
+  ctx.save();
+  ctx.translate(pose.leftEarX - horizontalOffset, pose.leftEarY + verticalOffset);
+  ctx.rotate(rotation);
+  ctx.drawImage(asset.canvas, 0, 0, leftHalfWidth, asset.height, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(pose.rightEarX + horizontalOffset, pose.rightEarY + verticalOffset);
+  ctx.rotate(rotation);
+  ctx.drawImage(asset.canvas, leftHalfWidth, 0, leftHalfWidth, asset.height, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
   ctx.restore();
 }
 
