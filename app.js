@@ -291,7 +291,6 @@ function defaultStampPlacement(itemId) {
 function updateCameraModeUi() {
   const mirrored = currentFacingMode === "user";
   video.classList.toggle("mirror", mirrored);
-  canvas.classList.toggle("mirror", mirrored);
   const label = mirrored ? "うしろカメラに切り替える" : "まえカメラに切り替える";
   switchButton.setAttribute("aria-label", label);
   switchButton.setAttribute("title", label);
@@ -410,7 +409,7 @@ function getPhotoRect() {
 
   const horizontalPadding = canvas.width * 0.08;
   const topPadding = canvas.height * 0.1;
-  const bottomPadding = canvas.height * 0.14;
+  const bottomPadding = canvas.height * 0.2;
   return {
     left: horizontalPadding,
     top: topPadding,
@@ -419,17 +418,42 @@ function getPhotoRect() {
   };
 }
 
+function drawImageCover(image, left, top, width, height, mirrored = false) {
+  const sourceWidth = image.videoWidth || image.naturalWidth || image.width;
+  const sourceHeight = image.videoHeight || image.naturalHeight || image.height;
+  if (!sourceWidth || !sourceHeight) {
+    return;
+  }
+
+  const scale = Math.max(width / sourceWidth, height / sourceHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale;
+  const dx = left + ((width - drawWidth) / 2);
+  const dy = top + ((height - drawHeight) / 2);
+
+  if (mirrored) {
+    ctx.save();
+    ctx.translate((left * 2) + width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
+    ctx.restore();
+    return;
+  }
+
+  ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
+}
+
 function drawBackgroundLayer() {
   const asset = getSelectedAsset("background", state.selectedBackgroundId);
   if (!asset) {
     return;
   }
-  ctx.drawImage(asset.canvas, 0, 0, canvas.width, canvas.height);
+  drawImageCover(asset.canvas, 0, 0, canvas.width, canvas.height, false);
 }
 
 function drawCameraLayer(image, rect) {
   if (!state.selectedBackgroundId) {
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    drawImageCover(image, 0, 0, canvas.width, canvas.height, currentFacingMode === "user");
     return;
   }
 
@@ -447,7 +471,26 @@ function drawCameraLayer(image, rect) {
   ctx.quadraticCurveTo(rect.left, rect.top, rect.left + radius, rect.top);
   ctx.closePath();
   ctx.clip();
-  ctx.drawImage(image, rect.left, rect.top, rect.width, rect.height);
+  drawImageCover(image, rect.left, rect.top, rect.width, rect.height, currentFacingMode === "user");
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.lineWidth = Math.max(4, canvas.width * 0.008);
+  ctx.shadowColor = "rgba(0, 0, 0, 0.18)";
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.moveTo(rect.left + radius, rect.top);
+  ctx.lineTo(rect.left + rect.width - radius, rect.top);
+  ctx.quadraticCurveTo(rect.left + rect.width, rect.top, rect.left + rect.width, rect.top + radius);
+  ctx.lineTo(rect.left + rect.width, rect.top + rect.height - radius);
+  ctx.quadraticCurveTo(rect.left + rect.width, rect.top + rect.height, rect.left + rect.width - radius, rect.top + rect.height);
+  ctx.lineTo(rect.left + radius, rect.top + rect.height);
+  ctx.quadraticCurveTo(rect.left, rect.top + rect.height, rect.left, rect.top + rect.height - radius);
+  ctx.lineTo(rect.left, rect.top + radius);
+  ctx.quadraticCurveTo(rect.left, rect.top, rect.left + radius, rect.top);
+  ctx.closePath();
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -458,22 +501,28 @@ function computeFacePose(landmarks, rect) {
   const chin = landmarks[152];
   const leftCheek = landmarks[177];
   const rightCheek = landmarks[401];
-  const leftX = rect.left + (leftTemple.x * rect.width);
+  const leftXRaw = rect.left + (leftTemple.x * rect.width);
   const leftY = rect.top + (leftTemple.y * rect.height);
-  const rightX = rect.left + (rightTemple.x * rect.width);
+  const rightXRaw = rect.left + (rightTemple.x * rect.width);
   const rightY = rect.top + (rightTemple.y * rect.height);
-  const foreheadX = rect.left + (forehead.x * rect.width);
+  const foreheadXRaw = rect.left + (forehead.x * rect.width);
   const foreheadY = rect.top + (forehead.y * rect.height);
   const chinY = rect.top + (chin.y * rect.height);
-  const leftEarX = rect.left + (((leftTemple.x * 0.58) + (leftCheek.x * 0.42)) * rect.width);
+  const leftEarXRaw = rect.left + (((leftTemple.x * 0.58) + (leftCheek.x * 0.42)) * rect.width);
   const leftEarY = rect.top + (((leftTemple.y * 0.35) + (leftCheek.y * 0.65)) * rect.height);
-  const rightEarX = rect.left + (((rightTemple.x * 0.58) + (rightCheek.x * 0.42)) * rect.width);
+  const rightEarXRaw = rect.left + (((rightTemple.x * 0.58) + (rightCheek.x * 0.42)) * rect.width);
   const rightEarY = rect.top + (((rightTemple.y * 0.35) + (rightCheek.y * 0.65)) * rect.height);
-  const dx = rightX - leftX;
+  const dx = rightXRaw - leftXRaw;
   const dy = rightY - leftY;
   const headWidth = Math.hypot(dx, dy);
   const headHeight = Math.max(chinY - foreheadY, headWidth * 0.9);
-  const angle = Math.atan2(dy, dx);
+  const mirrored = currentFacingMode === "user";
+  const leftX = mirrored ? rect.left + rect.width - (leftXRaw - rect.left) : leftXRaw;
+  const rightX = mirrored ? rect.left + rect.width - (rightXRaw - rect.left) : rightXRaw;
+  const foreheadX = mirrored ? rect.left + rect.width - (foreheadXRaw - rect.left) : foreheadXRaw;
+  const leftEarX = mirrored ? rect.left + rect.width - (leftEarXRaw - rect.left) : leftEarXRaw;
+  const rightEarX = mirrored ? rect.left + rect.width - (rightEarXRaw - rect.left) : rightEarXRaw;
+  const angle = mirrored ? -Math.atan2(dy, dx) : Math.atan2(dy, dx);
   return { foreheadX, foreheadY, headWidth, headHeight, angle, leftEarX, leftEarY, rightEarX, rightEarY };
 }
 
@@ -638,11 +687,8 @@ async function startArCamera(mode = currentFacingMode) {
 function getCanvasPointFromEvent(event) {
   const rect = canvas.getBoundingClientRect();
   const source = event.changedTouches ? event.changedTouches[0] : event;
-  let x = ((source.clientX - rect.left) / rect.width) * canvas.width;
+  const x = ((source.clientX - rect.left) / rect.width) * canvas.width;
   const y = ((source.clientY - rect.top) / rect.height) * canvas.height;
-  if (currentFacingMode === "user") {
-    x = canvas.width - x;
-  }
   return { x, y };
 }
 

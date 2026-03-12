@@ -13,7 +13,7 @@ body {
 .appShell {
   position: relative;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   background:
     radial-gradient(circle at top, rgba(255, 217, 176, 0.18), transparent 35%),
     linear-gradient(180deg, #1a120d 0%, #241913 100%);
@@ -53,6 +53,7 @@ canvas {
   bottom: 0;
   justify-content: center;
   gap: 16px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
 }
 
 .ghostButton,
