@@ -8,8 +8,14 @@ const ITEM_DEFS = [
   { id: "face_usamimi_02", category: "faceAccessory", label: "おともだち", src: "assets/face/face_usamimi_02.png", unlockedByDefault: true, slot: "head", scale: 1.24, offsetX: -0.02, offsetY: -0.16, angleScale: 0.2, angleOffset: 0.12 },
   { id: "face_usamimi_03", category: "faceAccessory", label: "つばさ", src: "assets/face/face_usamimi_03.png", unlockedByDefault: true, slot: "head", scale: 0.9, offsetX: 0, offsetY: -0.22, angleScale: 1, angleOffset: 0 },
   { id: "face_usamimi_04", category: "faceAccessory", label: "カラフル", src: "assets/face/face_usamimi_04.png", unlockedByDefault: true, slot: "head", scale: 1.12, offsetX: 0, offsetY: -0.12, angleScale: 1, angleOffset: 0 },
+  { id: "face_headband_easter_01", category: "faceAccessory", label: "イースター", src: "assets/face/face_headband_easter_01.png", unlockedByDefault: true, slot: "head", scale: 0.98, offsetX: 0, offsetY: -0.06, angleScale: 1, angleOffset: 0 },
+  { id: "face_earring_flower_01", category: "faceAccessory", label: "はないやリング", unlockedByDefault: true, slot: "earPair", leftSrc: "assets/face/face_earring_flower_left_01.png", rightSrc: "assets/face/face_earring_flower_right_01.png", scale: 0.46, leftOffsetX: 0.012, rightOffsetX: 0.012, offsetY: 0.045, angleScale: 0.22, angleOffset: 0 },
   { id: "character_molddoll_01", category: "character", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.28 },
-  { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true }
+  { id: "character_jelly_01", category: "character", label: "ゼリー", src: "assets/character/character_jelly_01.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.24 },
+  { id: "character_chick_01", category: "character", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
+  { id: "character_chick_02", category: "character", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
+  { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true },
+  { id: "frame_flower_soft_01", category: "frame", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: true }
 ];
 
 const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
@@ -277,7 +283,25 @@ function loadImage(item) {
 
 async function loadRenderableAssets() {
   for (const item of ITEM_DEFS) {
-    const image = await loadImage(item);
+    if (item.leftSrc && item.rightSrc) {
+      const leftImage = await loadImage({ src: item.leftSrc });
+      const rightImage = await loadImage({ src: item.rightSrc });
+      if (!leftImage || !rightImage) {
+        continue;
+      }
+      loadedAssets.set(item.id, {
+        ...item,
+        leftCanvas: processAssetToCanvas(leftImage, true),
+        rightCanvas: processAssetToCanvas(rightImage, true),
+        leftWidth: leftImage.naturalWidth,
+        leftHeight: leftImage.naturalHeight,
+        rightWidth: rightImage.naturalWidth,
+        rightHeight: rightImage.naturalHeight
+      });
+      continue;
+    }
+
+    const image = await loadImage({ src: item.src });
     if (!image) {
       continue;
     }
@@ -378,13 +402,36 @@ function drawFaceAccessoryLayer(pose) {
 }
 
 function drawEarPairAccessoryLayer(asset, pose) {
-  const leftHalfWidth = asset.width / 2;
   const baseWidth = pose.headWidth * (asset.scale ?? 0.34);
+  const rotation = (pose.angle * (asset.angleScale ?? 0.35)) + (asset.angleOffset ?? 0);
+  const verticalOffset = pose.headHeight * (asset.offsetY ?? 0);
+
+  if (asset.leftCanvas && asset.rightCanvas) {
+    const leftWidth = baseWidth * (asset.leftScale ?? 1);
+    const leftHeight = leftWidth * (asset.leftHeight / asset.leftWidth);
+    const rightWidth = baseWidth * (asset.rightScale ?? 1);
+    const rightHeight = rightWidth * (asset.rightHeight / asset.rightWidth);
+    const leftX = pose.leftEarX - (pose.headWidth * (asset.leftOffsetX ?? 0));
+    const rightX = pose.rightEarX + (pose.headWidth * (asset.rightOffsetX ?? 0));
+
+    ctx.save();
+    ctx.translate(leftX, pose.leftEarY + verticalOffset);
+    ctx.rotate(rotation + (asset.leftAngleOffset ?? 0));
+    ctx.drawImage(asset.leftCanvas, -leftWidth / 2, -leftHeight / 2, leftWidth, leftHeight);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(rightX, pose.rightEarY + verticalOffset);
+    ctx.rotate(rotation + (asset.rightAngleOffset ?? 0));
+    ctx.drawImage(asset.rightCanvas, -rightWidth / 2, -rightHeight / 2, rightWidth, rightHeight);
+    ctx.restore();
+    return;
+  }
+
+  const leftHalfWidth = asset.width / 2;
   const drawWidth = baseWidth;
   const drawHeight = drawWidth * (asset.height / leftHalfWidth);
-  const rotation = (pose.angle * (asset.angleScale ?? 0.35)) + (asset.angleOffset ?? 0);
   const horizontalOffset = pose.headWidth * (asset.offsetX ?? 0);
-  const verticalOffset = pose.headHeight * (asset.offsetY ?? 0);
 
   ctx.save();
   ctx.translate(pose.leftEarX - horizontalOffset, pose.leftEarY + verticalOffset);
