@@ -460,7 +460,7 @@ function renderPickerOptions() {
     noneButton.type = "button";
     noneButton.className = `optionButton${!getDraftSlotValue(pickerCategory) ? " selected" : ""}`;
     noneButton.textContent = "なし";
-    noneButton.addEventListener("pointerup", (event) => {
+    bindPress(noneButton, (event) => {
       stopEvent(event);
       applyPickerSelection(null);
     });
@@ -475,7 +475,7 @@ function renderPickerOptions() {
     if (!PLACEMENT_CATEGORIES.has(pickerCategory) && getDraftSlotValue(pickerCategory) === item.id) {
       button.classList.add("selected");
     }
-    button.addEventListener("pointerup", (event) => {
+    bindPress(button, (event) => {
       stopEvent(event);
       applyPickerSelection(item.id);
     });
@@ -569,7 +569,7 @@ function renderBuilderDraft() {
     button.style.transform = `translate(-50%, -50%) rotate(${placement.rotation}deg) scale(${placement.scale / 0.24})`;
     button.innerHTML = `<img src="${item.src}" alt="${item.label}">`;
     button.addEventListener("pointerdown", beginBuilderDrag);
-    button.addEventListener("pointerup", (event) => {
+    bindPress(button, (event) => {
       stopEvent(event);
       selectedPlacementId = placement.instanceId;
       renderBuilderDraft();
@@ -1062,6 +1062,18 @@ function switchToCollectionMode() {
   setMode("collection");
 }
 
+window.kmOpenBuilder = () => {
+  switchToBuilderMode();
+};
+
+window.kmOpenPhoto = async () => {
+  await switchToPhotoMode();
+};
+
+window.kmOpenCollection = () => {
+  switchToCollectionMode();
+};
+
 function savePhoto() {
   if (!canvas.width || !canvas.height) {
     return;
@@ -1418,32 +1430,32 @@ bindPress(saveFrameButton, (event) => {
   saveBuilderFrame();
 });
 
-builderFaceButton.addEventListener("pointerup", (event) => {
+bindPress(builderFaceButton, (event) => {
   stopEvent(event);
   openPickerPanel("faceAccessory");
 });
 
-builderBackgroundButton.addEventListener("pointerup", (event) => {
+bindPress(builderBackgroundButton, (event) => {
   stopEvent(event);
   openPickerPanel("background");
 });
 
-builderFrameButton.addEventListener("pointerup", (event) => {
+bindPress(builderFrameButton, (event) => {
   stopEvent(event);
   openPickerPanel("frame");
 });
 
-builderCharacterButton.addEventListener("pointerup", (event) => {
+bindPress(builderCharacterButton, (event) => {
   stopEvent(event);
   openPickerPanel("character");
 });
 
-builderStampButton.addEventListener("pointerup", (event) => {
+bindPress(builderStampButton, (event) => {
   stopEvent(event);
   openPickerPanel("stamp");
 });
 
-deletePlacementButton.addEventListener("pointerup", (event) => {
+bindPress(deletePlacementButton, (event) => {
   stopEvent(event);
   deleteSelectedPlacement();
 });

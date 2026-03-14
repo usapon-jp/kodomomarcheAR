@@ -32,15 +32,15 @@
         </a>
 
         <div class="homeMenuList">
-          <button id="openBuilderButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームをつくる">
+          <button id="openBuilderButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームをつくる" onclick="window.kmOpenBuilder && window.kmOpenBuilder(); return false;">
             <img src="assets/home/home_menu_builder_01.png" alt="">
             <span class="srOnly">フレームをつくる</span>
           </button>
-          <button id="openCameraButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームで写真">
+          <button id="openCameraButton" class="homeImageButton homeMenuButton" type="button" aria-label="フレームで写真" onclick="window.kmOpenPhoto && window.kmOpenPhoto(); return false;">
             <img src="assets/home/home_menu_camera_01.png" alt="">
             <span class="srOnly">フレームで写真</span>
           </button>
-          <button id="openCollectionButton" class="homeImageButton homeMenuButton homeMenuButtonCollection" type="button" aria-label="アイテムコレクション">
+          <button id="openCollectionButton" class="homeImageButton homeMenuButton homeMenuButtonCollection" type="button" aria-label="アイテムコレクション" onclick="window.kmOpenCollection && window.kmOpenCollection(); return false;">
             <img src="assets/home/home_menu_collection_01.png" alt="">
             <span class="srOnly">アイテムコレクション</span>
           </button>
