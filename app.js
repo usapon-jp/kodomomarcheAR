@@ -285,6 +285,17 @@ function showReward(title, message) {
   }, 2000);
 }
 
+function consumeInitialScreenRoute() {
+  const url = new URL(window.location.href);
+  const screen = url.searchParams.get("screen");
+  if (!screen) {
+    return null;
+  }
+  url.searchParams.delete("screen");
+  history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  return screen;
+}
+
 function bindPress(element, handler) {
   let lastHandledAt = 0;
   const invoke = async (event) => {
@@ -1350,11 +1361,13 @@ async function init() {
   updateHomeProgress();
   updateCameraModeUi();
   setMode("home");
+  const initialScreen = consumeInitialScreenRoute();
+  if (initialScreen === "qr") {
+    setTimeout(() => {
+      startQrMode("home");
+    }, 0);
+  }
 }
-
-window.kmStartQr = async () => {
-  await startQrMode("home");
-};
 
 bindPress(startQrButton, (event) => {
   stopEvent(event);
