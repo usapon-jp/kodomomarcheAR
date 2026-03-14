@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アイテムコレクション | こどもマルシェAR</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #fff8f0, #f7eadf);
+      color: #2b1b12;
+    }
+    .shell {
+      min-height: 100dvh;
+      padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+    }
+    .header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .circleButton {
+      min-width: 54px;
+      height: 54px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.96);
+      color: #5f3c1c;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(126, 86, 44, 0.16);
+    }
+    .title { font-size: 24px; font-weight: 900; line-height: 1.2; }
+    .subtitle { margin-top: 4px; color: rgba(43,27,18,0.72); font-size: 14px; line-height: 1.5; }
+    .summary {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #f4ebe2;
+      color: #6a3e17;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .list {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #f8efe8;
+      box-shadow: inset 0 0 0 1px rgba(191, 157, 115, 0.26);
+    }
+    .card.locked { opacity: 0.72; }
+    .preview {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      margin-bottom: 12px;
+      border-radius: 18px;
+      background: #fff6ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .preview img { width: 72%; height: 72%; object-fit: contain; }
+    .lockedMark { color: #c9a47a; font-size: 42px; font-weight: 900; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .name { font-size: 16px; font-weight: 900; }
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e6d0bb;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .badge.done { background: #8ecf67; color: #183311; }
+    .meta { margin-top: 8px; color: rgba(43,27,18,0.62); font-size: 12px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <button id="backButton" class="circleButton" type="button">←</button>
+      <div>
+        <div class="title">アイテムコレクション</div>
+        <div class="subtitle">見つけたQRとアイテムが見られるよ</div>
+      </div>
+    </div>
+    <div id="summary" class="summary"></div>
+    <div id="list" class="list"></div>
+  </div>
+  <script>
+    const STORAGE_KEYS = {
+      unlocked: "km_unlockedItemIds",
+      readQrs: "km_readQrIds"
+    };
+    const LEGACY_STORAGE_KEYS = {
+      unlocked: "kodomoMarcheUnlockedItems",
+      readQrs: "kodomoMarcheReadQrIds"
+    };
+    const ITEM_DEFS = [
+      { id: "face_usamimi_01", category: "顔アクセ", label: "うさみみ", src: "assets/face/face_usamimi_01.png", unlockedByDefault: true },
+      { id: "face_usamimi_02", category: "顔アクセ", label: "おともだち", src: "assets/face/face_usamimi_02.png", unlockedByDefault: true },
+      { id: "face_usamimi_03", category: "顔アクセ", label: "つばさ", src: "assets/face/face_usamimi_03.png", unlockedByDefault: true },
+      { id: "face_usamimi_04", category: "顔アクセ", label: "カラフル", src: "assets/face/face_usamimi_04.png", unlockedByDefault: true },
+      { id: "face_headband_easter_01", category: "顔アクセ", label: "イースター", src: "assets/face/face_headband_easter_01.png", unlockedByDefault: false },
+      { id: "face_earring_flower_01", category: "顔アクセ", label: "はないやリング", src: "assets/face/face_earring_flower_left_01.png", unlockedByDefault: false },
+      { id: "character_molddoll_01", category: "キャラ", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true },
+      { id: "character_jelly_01", category: "キャラ", label: "ゼリー", src: "assets/character/character_jelly_01.png", unlockedByDefault: false },
+      { id: "character_chick_01", category: "キャラ", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true },
+      { id: "character_chick_02", category: "キャラ", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: false },
+      { id: "frame_kodomomarche_01", category: "フレーム", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true },
+      { id: "frame_flower_soft_01", category: "フレーム", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: false },
+      { id: "background_venue_01", category: "背景", label: "かいじょう背景", src: "assets/background/background_venue_01.png", unlockedByDefault: false },
+      { id: "stamp_kodomomarche_01", category: "スタンプ", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png", unlockedByDefault: false }
+    ];
+    const QR_TOTAL = 5;
+    const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
+    function readStoredJson(primaryKey, legacyKey) {
+      try {
+        const raw = localStorage.getItem(primaryKey);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      try {
+        const raw = localStorage.getItem(legacyKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+    function defaultUnlockedIds() {
+      return ITEM_DEFS.filter((item) => item.unlockedByDefault).map((item) => item.id);
+    }
+    const unlocked = (() => {
+      const parsed = readStoredJson(STORAGE_KEYS.unlocked, LEGACY_STORAGE_KEYS.unlocked);
+      if (!Array.isArray(parsed)) return defaultUnlockedIds();
+      return Array.from(new Set([...defaultUnlockedIds(), ...parsed.filter((id) => ITEM_MAP.has(id))]));
+    })();
+    const readQrIds = (() => {
+      const parsed = readStoredJson(STORAGE_KEYS.readQrs, LEGACY_STORAGE_KEYS.readQrs);
+      return Array.isArray(parsed) ? parsed : [];
+    })();
+    const summary = document.getElementById("summary");
+    const list = document.getElementById("list");
+    summary.textContent = `見つけたQR ${readQrIds.length} / ${QR_TOTAL} ・ あつめたアイテム ${unlocked.length} / ${ITEM_DEFS.length}`;
+    for (const item of ITEM_DEFS) {
+      const isUnlocked = unlocked.includes(item.id);
+      const card = document.createElement("article");
+      card.className = `card${isUnlocked ? "" : " locked"}`;
+      card.innerHTML = `
+        <div class="preview">${isUnlocked ? `<img src="${item.src}" alt="${item.label}">` : '<div class="lockedMark">?</div>'}</div>
+        <div class="row">
+          <div class="name">${isUnlocked ? item.label : "？？？"}</div>
+          <div class="badge${isUnlocked ? " done" : ""}">${isUnlocked ? "GET" : "まだ"}</div>
+        </div>
+        <div class="meta">${item.category}</div>
+      `;
+      list.appendChild(card);
+    }
+    document.getElementById("backButton").addEventListener("click", () => { window.location.href = "./"; });
+  </script>
+</body>
+</html>

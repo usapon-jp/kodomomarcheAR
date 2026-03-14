@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フレームをつくる | こどもマルシェAR</title>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: linear-gradient(180deg, #fff8f0, #f7eadf);
+      color: #2b1b12;
+    }
+    body { overflow: hidden; }
+    .shell {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+      box-sizing: border-box;
+    }
+    .header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .circleButton, .actionButton, .pickerButton {
+      border: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .circleButton {
+      min-width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.96);
+      color: #5f3c1c;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(126, 86, 44, 0.16);
+    }
+    .saveButton {
+      min-width: 72px;
+      height: 54px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffcf62, #f3a825);
+      color: #6f3f12;
+      font-size: 16px;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(150, 95, 22, 0.22);
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .subtitle {
+      margin-top: 4px;
+      color: rgba(43,27,18,0.72);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .stageWrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    .stage {
+      position: relative;
+      width: min(100%, 430px);
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border-radius: 28px;
+      background: #fff7ef;
+      box-shadow: 0 18px 36px rgba(116, 82, 48, 0.18);
+    }
+    .stageBase, .stageBackground, .stageFrame, .placements, .photoWindow {
+      position: absolute;
+      inset: 0;
+    }
+    .stageBase {
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.72), transparent 28%),
+        linear-gradient(180deg, #fff7ef, #f6e7d8);
+    }
+    .stageBackground, .stageFrame {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    .stageBackground.visible, .stageFrame.visible {
+      display: block;
+    }
+    .photoWindow {
+      inset: 11% 8% 19%;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,240,228,0.72));
+      border: 4px solid rgba(255,255,255,0.92);
+      box-shadow: inset 0 0 0 1px rgba(212,176,125,0.34);
+    }
+    .placements { pointer-events: none; }
+    .placement {
+      position: absolute;
+      width: 92px;
+      height: 92px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .placement img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      filter: drop-shadow(0 8px 12px rgba(69,46,21,0.2));
+    }
+    .placement.selected::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border: 3px dashed #f08a5a;
+      border-radius: 20px;
+    }
+    .faceBadge {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: rgba(255,252,248,0.9);
+      color: #6a3e17;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(116,82,48,0.12);
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pickerButton {
+      min-height: 56px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #fff8f0;
+      color: #6a3e17;
+      box-shadow: 0 8px 16px rgba(116,82,48,0.12);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .dangerButton {
+      background: #ffe4dc;
+      color: #a13e2f;
+    }
+    .pickerSheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 72vh;
+      padding: 18px 18px 30px;
+      border-radius: 24px 24px 0 0;
+      background: rgba(255,247,242,0.985);
+      color: #2b1b12;
+      box-shadow: 0 -14px 40px rgba(0,0,0,0.28);
+      overflow-y: auto;
+      display: none;
+    }
+    .pickerSheet.visible { display: block; }
+    .sheetHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .sheetTitle {
+      font-size: 24px;
+      font-weight: 900;
+    }
+    .sheetSubtitle {
+      margin-top: 4px;
+      color: rgba(43,27,18,0.75);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .optionGrid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .optionButton {
+      min-height: 56px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      background: #f0e5dc;
+      color: #2b1b12;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .optionButton.selected {
+      background: #e78f67;
+      color: #fffaf7;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      top: 20px;
+      transform: translateX(-50%);
+      max-width: calc(100% - 32px);
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(0,0,0,0.76);
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.5;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+    .toast.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <button id="backButton" class="circleButton" type="button">←</button>
+      <div>
+        <div class="title">フレームをつくる</div>
+        <div class="subtitle">集めたアイテムで じぶんのフレームを作ろう</div>
+      </div>
+      <button id="saveButton" class="actionButton saveButton" type="button">保存</button>
+    </div>
+
+    <div class="stageWrap">
+      <div id="stage" class="stage">
+        <div class="stageBase"></div>
+        <img id="stageBackground" class="stageBackground" alt="">
+        <div class="photoWindow"></div>
+        <div id="placements" class="placements"></div>
+        <img id="stageFrame" class="stageFrame" alt="">
+        <div id="faceBadge" class="faceBadge">顔アクセ: なし</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="faceButton" class="pickerButton" type="button">顔アクセ</button>
+      <button id="backgroundButton" class="pickerButton" type="button">背景</button>
+      <button id="frameButton" class="pickerButton" type="button">フレーム</button>
+      <button id="characterButton" class="pickerButton" type="button">キャラ追加</button>
+      <button id="stampButton" class="pickerButton" type="button">スタンプ追加</button>
+      <button id="deleteButton" class="pickerButton dangerButton" type="button">選んだものを消す</button>
+    </div>
+  </div>
+
+  <aside id="pickerSheet" class="pickerSheet">
+    <div class="sheetHeader">
+      <div>
+        <div id="pickerTitle" class="sheetTitle">アイテムをえらぶ</div>
+        <div id="pickerSubtitle" class="sheetSubtitle">使いたいものをえらんでね</div>
+      </div>
+      <button id="closePickerButton" class="circleButton" type="button">×</button>
+    </div>
+    <div id="pickerOptions" class="optionGrid"></div>
+  </aside>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const STORAGE_KEYS = {
+      unlocked: "km_unlockedItemIds",
+      savedFrame: "km_savedFrameData"
+    };
+    const LEGACY_STORAGE_KEYS = {
+      unlocked: "kodomoMarcheUnlockedItems",
+      savedFrame: "kodomoMarcheSavedFrame"
+    };
+    const ITEM_DEFS = [
+      { id: "face_usamimi_01", category: "faceAccessory", label: "うさみみ", src: "assets/face/face_usamimi_01.png", unlockedByDefault: true },
+      { id: "face_usamimi_02", category: "faceAccessory", label: "おともだち", src: "assets/face/face_usamimi_02.png", unlockedByDefault: true },
+      { id: "face_usamimi_03", category: "faceAccessory", label: "つばさ", src: "assets/face/face_usamimi_03.png", unlockedByDefault: true },
+      { id: "face_usamimi_04", category: "faceAccessory", label: "カラフル", src: "assets/face/face_usamimi_04.png", unlockedByDefault: true },
+      { id: "face_headband_easter_01", category: "faceAccessory", label: "イースター", src: "assets/face/face_headband_easter_01.png", unlockedByDefault: false },
+      { id: "face_earring_flower_01", category: "faceAccessory", label: "はないやリング", src: "assets/face/face_earring_flower_left_01.png", unlockedByDefault: false },
+      { id: "character_molddoll_01", category: "character", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.78, defaultScale: 0.28 },
+      { id: "character_jelly_01", category: "character", label: "ゼリー", src: "assets/character/character_jelly_01.png", unlockedByDefault: false, defaultX: 0.46, defaultY: 0.78, defaultScale: 0.24 },
+      { id: "character_chick_01", category: "character", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true, defaultX: 0.54, defaultY: 0.78, defaultScale: 0.2 },
+      { id: "character_chick_02", category: "character", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: false, defaultX: 0.54, defaultY: 0.78, defaultScale: 0.2 },
+      { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true },
+      { id: "frame_flower_soft_01", category: "frame", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: false },
+      { id: "background_venue_01", category: "background", label: "かいじょう背景", src: "assets/background/background_venue_01.png", unlockedByDefault: false },
+      { id: "stamp_kodomomarche_01", category: "stamp", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png", unlockedByDefault: false, defaultX: 0.5, defaultY: 0.2, defaultScale: 0.34 }
+    ];
+
+    const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
+    const PLACEMENT_CATEGORIES = new Set(["character", "stamp"]);
+    const CATEGORY_LABELS = {
+      faceAccessory: "顔アクセ",
+      background: "背景",
+      frame: "フレーム",
+      character: "キャラ",
+      stamp: "スタンプ"
+    };
+
+    const backButton = document.getElementById("backButton");
+    const saveButton = document.getElementById("saveButton");
+    const stage = document.getElementById("stage");
+    const stageBackground = document.getElementById("stageBackground");
+    const stageFrame = document.getElementById("stageFrame");
+    const placements = document.getElementById("placements");
+    const faceBadge = document.getElementById("faceBadge");
+    const faceButton = document.getElementById("faceButton");
+    const backgroundButton = document.getElementById("backgroundButton");
+    const frameButton = document.getElementById("frameButton");
+    const characterButton = document.getElementById("characterButton");
+    const stampButton = document.getElementById("stampButton");
+    const deleteButton = document.getElementById("deleteButton");
+    const pickerSheet = document.getElementById("pickerSheet");
+    const pickerTitle = document.getElementById("pickerTitle");
+    const pickerSubtitle = document.getElementById("pickerSubtitle");
+    const pickerOptions = document.getElementById("pickerOptions");
+    const closePickerButton = document.getElementById("closePickerButton");
+    const toast = document.getElementById("toast");
+
+    let toastTimeoutId = null;
+    let pickerCategory = null;
+    let selectedPlacementId = null;
+    let dragState = null;
+
+    function defaultUnlockedIds() {
+      return ITEM_DEFS.filter((item) => item.unlockedByDefault).map((item) => item.id);
+    }
+
+    function readStoredJson(primaryKey, legacyKey) {
+      try {
+        const raw = localStorage.getItem(primaryKey);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      try {
+        const raw = localStorage.getItem(legacyKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function loadUnlockedItemIds() {
+      const fallback = defaultUnlockedIds();
+      const parsed = readStoredJson(STORAGE_KEYS.unlocked, LEGACY_STORAGE_KEYS.unlocked);
+      if (!Array.isArray(parsed)) return fallback;
+      const known = parsed.filter((id) => ITEM_MAP.has(id));
+      return Array.from(new Set([...fallback, ...known]));
+    }
+
+    function emptyFrame() {
+      return { backgroundId: null, faceAccessoryId: null, frameId: null, placements: [] };
+    }
+
+    const unlockedItemIds = loadUnlockedItemIds();
+    let frameData = (() => {
+      const parsed = readStoredJson(STORAGE_KEYS.savedFrame, LEGACY_STORAGE_KEYS.savedFrame);
+      if (!parsed || typeof parsed !== "object") return emptyFrame();
+      return {
+        backgroundId: parsed.backgroundId || null,
+        faceAccessoryId: parsed.faceAccessoryId || null,
+        frameId: parsed.frameId || null,
+        placements: Array.isArray(parsed.placements) ? parsed.placements : []
+      };
+    })();
+
+    function bindPress(element, handler) {
+      let lastHandledAt = 0;
+      const invoke = async (event) => {
+        const now = Date.now();
+        if (now - lastHandledAt < 350) return;
+        lastHandledAt = now;
+        await handler(event);
+      };
+      element.addEventListener("pointerup", invoke);
+      element.addEventListener("touchend", invoke);
+      element.addEventListener("click", invoke);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("visible");
+      clearTimeout(toastTimeoutId);
+      toastTimeoutId = setTimeout(() => toast.classList.remove("visible"), 2200);
+    }
+
+    function saveFrame() {
+      localStorage.setItem(STORAGE_KEYS.savedFrame, JSON.stringify(frameData));
+      showToast("フレームを ほぞんしました");
+    }
+
+    function getUnlockedItems(category) {
+      return ITEM_DEFS.filter((item) => item.category === category && unlockedItemIds.includes(item.id));
+    }
+
+    function render() {
+      const bg = ITEM_MAP.get(frameData.backgroundId);
+      stageBackground.classList.toggle("visible", !!bg);
+      if (bg) stageBackground.src = bg.src;
+
+      const frame = ITEM_MAP.get(frameData.frameId);
+      stageFrame.classList.toggle("visible", !!frame);
+      if (frame) stageFrame.src = frame.src;
+
+      const face = ITEM_MAP.get(frameData.faceAccessoryId);
+      faceBadge.textContent = `顔アクセ: ${face ? face.label : "なし"}`;
+
+      placements.innerHTML = "";
+      for (const placement of frameData.placements) {
+        const item = ITEM_MAP.get(placement.itemId);
+        if (!item) continue;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `placement${selectedPlacementId === placement.instanceId ? " selected" : ""}`;
+        button.dataset.instanceId = placement.instanceId;
+        button.style.left = `${placement.x * 100}%`;
+        button.style.top = `${placement.y * 100}%`;
+        button.style.transform = `translate(-50%, -50%) rotate(${placement.rotation || 0}deg) scale(${placement.scale / 0.24})`;
+        button.innerHTML = `<img src="${item.src}" alt="${item.label}">`;
+        button.addEventListener("pointerdown", beginDrag);
+        bindPress(button, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          selectedPlacementId = placement.instanceId;
+          render();
+        });
+        placements.appendChild(button);
+      }
+      deleteButton.disabled = !selectedPlacementId;
+    }
+
+    function closePicker() {
+      pickerCategory = null;
+      pickerSheet.classList.remove("visible");
+    }
+
+    function openPicker(category) {
+      pickerCategory = category;
+      pickerTitle.textContent = `${CATEGORY_LABELS[category]} をえらぶ`;
+      pickerSubtitle.textContent = category === "character" || category === "stamp"
+        ? "えらぶと ステージに追加されるよ"
+        : "ひとつ選んでね";
+      pickerOptions.innerHTML = "";
+
+      if (!PLACEMENT_CATEGORIES.has(category)) {
+        const noneButton = document.createElement("button");
+        noneButton.type = "button";
+        noneButton.className = "optionButton";
+        noneButton.textContent = "なし";
+        bindPress(noneButton, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (category === "faceAccessory") frameData.faceAccessoryId = null;
+          if (category === "background") frameData.backgroundId = null;
+          if (category === "frame") frameData.frameId = null;
+          closePicker();
+          render();
+        });
+        pickerOptions.appendChild(noneButton);
+      }
+
+      for (const item of getUnlockedItems(category)) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "optionButton";
+        button.textContent = item.label;
+        bindPress(button, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (category === "faceAccessory") frameData.faceAccessoryId = item.id;
+          else if (category === "background") frameData.backgroundId = item.id;
+          else if (category === "frame") frameData.frameId = item.id;
+          else addPlacement(item);
+          closePicker();
+          render();
+        });
+        pickerOptions.appendChild(button);
+      }
+
+      pickerSheet.classList.add("visible");
+    }
+
+    function addPlacement(item) {
+      frameData.placements.push({
+        instanceId: `${item.id}-${Date.now()}-${Math.random()}`,
+        itemId: item.id,
+        x: item.defaultX ?? 0.5,
+        y: item.defaultY ?? 0.7,
+        scale: item.defaultScale ?? 0.24,
+        rotation: 0
+      });
+      selectedPlacementId = frameData.placements[frameData.placements.length - 1].instanceId;
+    }
+
+    function beginDrag(event) {
+      const target = event.currentTarget;
+      const placement = frameData.placements.find((item) => item.instanceId === target.dataset.instanceId);
+      if (!placement) return;
+      const rect = stage.getBoundingClientRect();
+      dragState = {
+        instanceId: placement.instanceId,
+        offsetX: ((event.clientX - rect.left) / rect.width) - placement.x,
+        offsetY: ((event.clientY - rect.top) / rect.height) - placement.y
+      };
+      selectedPlacementId = placement.instanceId;
+      render();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function moveDrag(event) {
+      if (!dragState) return;
+      const placement = frameData.placements.find((item) => item.instanceId === dragState.instanceId);
+      if (!placement) return;
+      const rect = stage.getBoundingClientRect();
+      placement.x = Math.min(0.9, Math.max(0.1, ((event.clientX - rect.left) / rect.width) - dragState.offsetX));
+      placement.y = Math.min(0.9, Math.max(0.12, ((event.clientY - rect.top) / rect.height) - dragState.offsetY));
+      render();
+    }
+
+    function endDrag() {
+      dragState = null;
+    }
+
+    function deleteSelectedPlacement() {
+      if (!selectedPlacementId) return;
+      frameData.placements = frameData.placements.filter((item) => item.instanceId !== selectedPlacementId);
+      selectedPlacementId = null;
+      render();
+    }
+
+    bindPress(backButton, () => { window.location.href = "./"; });
+    bindPress(saveButton, () => { saveFrame(); });
+    bindPress(faceButton, () => { openPicker("faceAccessory"); });
+    bindPress(backgroundButton, () => { openPicker("background"); });
+    bindPress(frameButton, () => { openPicker("frame"); });
+    bindPress(characterButton, () => { openPicker("character"); });
+    bindPress(stampButton, () => { openPicker("stamp"); });
+    bindPress(deleteButton, () => { deleteSelectedPlacement(); });
+    bindPress(closePickerButton, () => { closePicker(); });
+
+    stage.addEventListener("pointerdown", (event) => {
+      if (event.target === stage || event.target.classList.contains("photoWindow")) {
+        selectedPlacementId = null;
+        render();
+      }
+    });
+    window.addEventListener("pointermove", moveDrag);
+    window.addEventListener("pointerup", endDrag);
+
+    render();
+  </script>
+</body>
+</html>
