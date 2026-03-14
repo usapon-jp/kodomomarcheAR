@@ -73,8 +73,8 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: min(68vw, 250px);
-      height: min(68vw, 250px);
+      width: 250px;
+      height: 250px;
       border: 4px solid rgba(255, 255, 255, 0.92);
       border-radius: 28px;
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.18);
@@ -221,6 +221,7 @@
 
     const status = document.getElementById("status");
     const closeButton = document.getElementById("closeButton");
+    const guide = document.querySelector(".guide");
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardTitle = document.getElementById("rewardTitle");
     const rewardText = document.getElementById("rewardText");
@@ -229,6 +230,7 @@
 
     let scanner = null;
     let canCloseAfterReward = false;
+    const qrBoxSize = 250;
 
     function readStoredJson(primaryKey, legacyKey) {
       try {
@@ -345,11 +347,14 @@
       } catch {}
 
       try {
+        const guideSize = Math.min(Math.floor(window.innerWidth * 0.68), qrBoxSize);
+        guide.style.width = `${guideSize}px`;
+        guide.style.height = `${guideSize}px`;
         await scanner.start(
           cameraConfig,
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: { width: guideSize, height: guideSize },
             rememberLastUsedCamera: true
           },
           handleSuccess,
