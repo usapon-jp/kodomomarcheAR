@@ -111,6 +111,7 @@ let selectedPlacementId = null;
 let qrScanner = null;
 let qrScannerState = "idle";
 let qrStartRequestId = 0;
+let qrLibraryPromise = null;
 let faceMesh = null;
 let faceMeshReady = false;
 
@@ -282,6 +283,69 @@ function showReward(title, message) {
     rewardOverlay.classList.add("hiddenPanel");
     rewardTimeoutId = null;
   }, 2000);
+}
+
+function bindPress(element, handler) {
+  let pointerHandled = false;
+
+  element.addEventListener("pointerup", async (event) => {
+    pointerHandled = true;
+    await handler(event);
+    setTimeout(() => {
+      pointerHandled = false;
+    }, 0);
+  });
+
+  element.addEventListener("click", async (event) => {
+    if (pointerHandled) {
+      return;
+    }
+    await handler(event);
+  });
+}
+
+function loadExternalScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureQrLibraryLoaded() {
+  if (getHtml5QrcodeClass()) {
+    return true;
+  }
+  if (qrLibraryPromise) {
+    return qrLibraryPromise;
+  }
+
+  qrLibraryPromise = (async () => {
+    const candidates = [
+      "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js",
+      "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+    ];
+
+    for (const candidate of candidates) {
+      try {
+        await loadExternalScript(candidate);
+        if (getHtml5QrcodeClass()) {
+          return true;
+        }
+      } catch {}
+    }
+
+    return false;
+  })();
+
+  const loaded = await qrLibraryPromise;
+  if (!loaded) {
+    qrLibraryPromise = null;
+  }
+  return loaded;
 }
 
 function setMode(mode) {
@@ -1187,6 +1251,12 @@ async function handleQrScanSuccess(decodedText) {
 }
 
 async function startQrMode(fromMode = currentMode) {
+  const libraryLoaded = await ensureQrLibraryLoaded();
+  if (!libraryLoaded) {
+    showToast("QR読み取りの じゅんびに しっぱいしました");
+    return;
+  }
+
   const scanner = ensureQrScanner();
   if (!scanner) {
     showToast("このブラウザでは QR読み取りが使えません");
@@ -1264,32 +1334,32 @@ async function init() {
   setMode("home");
 }
 
-startQrButton.addEventListener("pointerup", (event) => {
+bindPress(startQrButton, (event) => {
   stopEvent(event);
-  startQrMode("home");
+  return startQrMode("home");
 });
 
-openBuilderButton.addEventListener("pointerup", (event) => {
+bindPress(openBuilderButton, (event) => {
   stopEvent(event);
   switchToBuilderMode();
 });
 
-openCameraButton.addEventListener("pointerup", async (event) => {
+bindPress(openCameraButton, async (event) => {
   stopEvent(event);
   await switchToPhotoMode();
 });
 
-openCollectionButton.addEventListener("pointerup", (event) => {
+bindPress(openCollectionButton, (event) => {
   stopEvent(event);
   switchToCollectionMode();
 });
 
-closeBuilderButton.addEventListener("pointerup", (event) => {
+bindPress(closeBuilderButton, (event) => {
   stopEvent(event);
   switchToHomeMode();
 });
 
-saveFrameButton.addEventListener("pointerup", (event) => {
+bindPress(saveFrameButton, (event) => {
   stopEvent(event);
   saveBuilderFrame();
 });
@@ -1324,43 +1394,43 @@ deletePlacementButton.addEventListener("pointerup", (event) => {
   deleteSelectedPlacement();
 });
 
-closePickerButton.addEventListener("pointerup", (event) => {
+bindPress(closePickerButton, (event) => {
   stopEvent(event);
   closePickerPanel();
 });
 
-closeCollectionButton.addEventListener("pointerup", (event) => {
+bindPress(closeCollectionButton, (event) => {
   stopEvent(event);
   switchToHomeMode();
 });
 
-homeButton.addEventListener("pointerup", (event) => {
+bindPress(homeButton, (event) => {
   stopEvent(event);
   switchToHomeMode();
 });
 
-menuButton.addEventListener("pointerup", (event) => {
+bindPress(menuButton, (event) => {
   stopEvent(event);
   switchToBuilderMode();
 });
 
-qrButton.addEventListener("pointerup", (event) => {
+bindPress(qrButton, (event) => {
   stopEvent(event);
-  startQrMode("photo");
+  return startQrMode("photo");
 });
 
-closeQrButton.addEventListener("pointerup", (event) => {
+bindPress(closeQrButton, (event) => {
   stopEvent(event);
-  stopQrMode();
+  return stopQrMode();
 });
 
-switchButton.addEventListener("pointerup", async (event) => {
+bindPress(switchButton, async (event) => {
   stopEvent(event);
   const nextMode = currentFacingMode === "user" ? "environment" : "user";
   await startPhotoCamera(nextMode);
 });
 
-captureButton.addEventListener("pointerup", (event) => {
+bindPress(captureButton, (event) => {
   stopEvent(event);
   savePhoto();
 });
