@@ -123,6 +123,37 @@
       line-height: 1.5;
       font-weight: 800;
     }
+    .rewardImageWrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+    .rewardImage {
+      width: min(100%, 200px);
+      max-height: 200px;
+      object-fit: contain;
+      display: none;
+      filter: drop-shadow(0 10px 14px rgba(96, 63, 24, 0.16));
+    }
+    .rewardImage.visible {
+      display: block;
+    }
+    .rewardBackButton {
+      margin-top: 16px;
+      min-width: 220px;
+      height: 54px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffcf62, #f3a825);
+      color: #6f3f12;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(150, 95, 22, 0.22);
+    }
   </style>
 </head>
 <body>
@@ -143,6 +174,10 @@
       <div class="rewardCard">
         <div id="rewardTitle" class="rewardTitle">アイテムGET!</div>
         <div id="rewardText" class="rewardText"></div>
+        <div class="rewardImageWrap">
+          <img id="rewardImage" class="rewardImage" alt="">
+        </div>
+        <button id="rewardBackButton" class="rewardBackButton" type="button">タップで戻る</button>
       </div>
     </div>
   </div>
@@ -159,13 +194,13 @@
     };
 
     const ITEM_DEFS = [
-      { id: "face_headband_easter_01", label: "イースター" },
-      { id: "face_earring_flower_01", label: "はないやリング" },
-      { id: "character_jelly_01", label: "ゼリー" },
-      { id: "character_chick_02", label: "ひよこリボン" },
-      { id: "frame_flower_soft_01", label: "おはなフレーム" },
-      { id: "background_venue_01", label: "かいじょう背景" },
-      { id: "stamp_kodomomarche_01", label: "こどもマルシェ" }
+      { id: "face_headband_easter_01", label: "イースター", src: "assets/face/face_headband_easter_01.png" },
+      { id: "face_earring_flower_01", label: "はないやリング", src: "assets/face/face_earring_flower_left_01.png" },
+      { id: "character_jelly_01", label: "ゼリー", src: "assets/character/character_jelly_01.png" },
+      { id: "character_chick_02", label: "ひよこリボン", src: "assets/character/character_chick_02.png" },
+      { id: "frame_flower_soft_01", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png" },
+      { id: "background_venue_01", label: "かいじょう背景", src: "assets/background/background_venue_01.png" },
+      { id: "stamp_kodomomarche_01", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png" }
     ];
 
     const QR_DEFS = [
@@ -184,9 +219,11 @@
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardTitle = document.getElementById("rewardTitle");
     const rewardText = document.getElementById("rewardText");
+    const rewardImage = document.getElementById("rewardImage");
+    const rewardBackButton = document.getElementById("rewardBackButton");
 
     let scanner = null;
-    let rewardTimeoutId = null;
+    let canCloseAfterReward = false;
 
     function readStoredJson(primaryKey, legacyKey) {
       try {
@@ -219,16 +256,17 @@
       localStorage.setItem(STORAGE_KEYS.readQrs, JSON.stringify(readQrIds));
     }
 
-    function showReward(title, message) {
+    function showReward(title, message, imageSrc = "") {
       rewardTitle.textContent = title;
       rewardText.textContent = message;
-      rewardOverlay.classList.add("visible");
-      if (rewardTimeoutId) {
-        clearTimeout(rewardTimeoutId);
+      if (imageSrc) {
+        rewardImage.src = imageSrc;
+        rewardImage.classList.add("visible");
+      } else {
+        rewardImage.removeAttribute("src");
+        rewardImage.classList.remove("visible");
       }
-      rewardTimeoutId = setTimeout(() => {
-        rewardOverlay.classList.remove("visible");
-      }, 2000);
+      rewardOverlay.classList.add("visible");
     }
 
     async function closeScanner() {
@@ -270,16 +308,18 @@
 
       saveState(unlockedItemIds, readQrIds);
 
-      if (alreadyRead && !newlyUnlocked.length) {
-        showReward("もうみつけた！", "このQRは もう読んでいるよ");
-      } else {
-        showReward("アイテムGET!", newlyUnlocked.length ? newlyUnlocked.join(" / ") : qr.label);
-      }
-
+      const previewItemId = qr.unlockItemIds[0];
+      const previewItem = ITEM_MAP.get(previewItemId);
       status.textContent = "よみとり せいこう！";
-      setTimeout(() => {
-        closeScanner();
-      }, 1200);
+      canCloseAfterReward = true;
+      try {
+        await scanner.stop();
+      } catch {}
+      if (alreadyRead && !newlyUnlocked.length) {
+        showReward("もうみつけた！", "このQRは もう読んでいるよ", previewItem?.src || "");
+      } else {
+        showReward("アイテムGET!", newlyUnlocked.length ? newlyUnlocked.join(" / ") : qr.label, previewItem?.src || "");
+      }
     }
 
     async function start() {
@@ -318,6 +358,12 @@
     }
 
     closeButton.addEventListener("click", closeScanner);
+    rewardBackButton.addEventListener("click", () => {
+      if (!canCloseAfterReward) {
+        return;
+      }
+      closeScanner();
+    });
     start();
   </script>
 </body>
