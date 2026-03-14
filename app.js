@@ -286,21 +286,26 @@ function showReward(title, message) {
 }
 
 function bindPress(element, handler) {
-  let pointerHandled = false;
+  let lastHandledAt = 0;
+  const invoke = async (event) => {
+    const now = Date.now();
+    if (now - lastHandledAt < 350) {
+      return;
+    }
+    lastHandledAt = now;
+    await handler(event);
+  };
 
   element.addEventListener("pointerup", async (event) => {
-    pointerHandled = true;
-    await handler(event);
-    setTimeout(() => {
-      pointerHandled = false;
-    }, 0);
+    await invoke(event);
+  });
+
+  element.addEventListener("touchend", async (event) => {
+    await invoke(event);
   });
 
   element.addEventListener("click", async (event) => {
-    if (pointerHandled) {
-      return;
-    }
-    await handler(event);
+    await invoke(event);
   });
 }
 
@@ -1251,25 +1256,29 @@ async function handleQrScanSuccess(decodedText) {
 }
 
 async function startQrMode(fromMode = currentMode) {
+  previousModeBeforeQr = fromMode;
+  closePickerPanel();
+  stopPhotoCamera();
+  setMode("qr");
+  qrStatus.textContent = "QRカメラを じゅんび中…";
+  qrReader.innerHTML = "";
+
   const libraryLoaded = await ensureQrLibraryLoaded();
   if (!libraryLoaded) {
+    qrStatus.textContent = "QR読み取りの じゅんびに しっぱいしました";
     showToast("QR読み取りの じゅんびに しっぱいしました");
     return;
   }
 
   const scanner = ensureQrScanner();
   if (!scanner) {
+    qrStatus.textContent = "このブラウザでは QR読み取りが使えません";
     showToast("このブラウザでは QR読み取りが使えません");
     return;
   }
   if (qrScannerState === "running" || qrScannerState === "starting") {
     return;
   }
-
-  previousModeBeforeQr = fromMode;
-  closePickerPanel();
-  stopPhotoCamera();
-  setMode("qr");
   qrStatus.textContent = "QRをよみとり中…";
   qrReader.innerHTML = "";
   qrStartRequestId += 1;
@@ -1277,15 +1286,24 @@ async function startQrMode(fromMode = currentMode) {
   qrScannerState = "starting";
 
   try {
+    const Html5QrcodeClass = getHtml5QrcodeClass();
+    let cameraConfig = { facingMode: "environment" };
+    if (Html5QrcodeClass?.getCameras) {
+      try {
+        const cameras = await Html5QrcodeClass.getCameras();
+        if (cameras?.length) {
+          const backCamera = cameras.find((camera) => /back|rear|environment|背面|うしろ/i.test(camera.label)) || cameras[0];
+          cameraConfig = backCamera.id;
+        }
+      } catch {}
+    }
+
     await scanner.start(
-      { facingMode: "environment" },
+      cameraConfig,
       {
         fps: 10,
-        qrbox: (width, height) => {
-          const edge = Math.floor(Math.min(width, height) * 0.7);
-          return { width: edge, height: edge };
-        },
-        aspectRatio: 1
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true
       },
       async (decodedText) => {
         if (qrScannerState !== "running") {
