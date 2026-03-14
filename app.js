@@ -1352,6 +1352,10 @@ async function init() {
   setMode("home");
 }
 
+window.kmStartQr = async () => {
+  await startQrMode("home");
+};
+
 bindPress(startQrButton, (event) => {
   stopEvent(event);
   return startQrMode("home");
