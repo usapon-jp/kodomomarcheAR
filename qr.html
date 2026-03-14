@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRを読む | こどもマルシェAR</title>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: #000;
+      color: #fff;
+    }
+    body {
+      overflow: hidden;
+    }
+    .shell {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      background: #000;
+    }
+    #reader {
+      position: absolute;
+      inset: 0;
+    }
+    #reader video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 18px;
+      box-sizing: border-box;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.56) 0%, rgba(0, 0, 0, 0.08) 36%, rgba(0, 0, 0, 0.58) 100%);
+      pointer-events: none;
+    }
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      pointer-events: auto;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 900;
+    }
+    .subtitle {
+      margin-top: 4px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.84);
+    }
+    .closeButton {
+      min-width: 56px;
+      height: 56px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+    }
+    .guide {
+      align-self: center;
+      width: min(72vw, 320px);
+      height: min(72vw, 320px);
+      border: 4px solid rgba(255, 255, 255, 0.92);
+      border-radius: 28px;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.18);
+    }
+    .status {
+      align-self: center;
+      min-width: 220px;
+      max-width: calc(100% - 32px);
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.72);
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .rewardOverlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.18);
+      pointer-events: none;
+    }
+    .rewardOverlay.visible {
+      display: flex;
+    }
+    .rewardCard {
+      min-width: min(100%, 280px);
+      max-width: 360px;
+      padding: 22px 24px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #fff9eb, #ffe9be);
+      color: #7a4316;
+      text-align: center;
+      box-shadow: 0 18px 36px rgba(96, 63, 24, 0.22);
+    }
+    .rewardTitle {
+      font-size: 28px;
+      font-weight: 900;
+    }
+    .rewardText {
+      margin-top: 10px;
+      font-size: 16px;
+      line-height: 1.5;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div id="reader"></div>
+    <div class="overlay">
+      <div class="header">
+        <div>
+          <div class="title">QRを読む</div>
+          <div class="subtitle">会場のQRコードを かざしてね</div>
+        </div>
+        <button id="closeButton" class="closeButton" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div class="guide"></div>
+      <div id="status" class="status">QRカメラを じゅんび中…</div>
+    </div>
+    <div id="rewardOverlay" class="rewardOverlay" aria-live="polite">
+      <div class="rewardCard">
+        <div id="rewardTitle" class="rewardTitle">アイテムGET!</div>
+        <div id="rewardText" class="rewardText"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      unlocked: "km_unlockedItemIds",
+      readQrs: "km_readQrIds"
+    };
+
+    const LEGACY_STORAGE_KEYS = {
+      unlocked: "kodomoMarcheUnlockedItems",
+      readQrs: "kodomoMarcheReadQrIds"
+    };
+
+    const ITEM_DEFS = [
+      { id: "face_headband_easter_01", label: "イースター" },
+      { id: "face_earring_flower_01", label: "はないやリング" },
+      { id: "character_jelly_01", label: "ゼリー" },
+      { id: "character_chick_02", label: "ひよこリボン" },
+      { id: "frame_flower_soft_01", label: "おはなフレーム" },
+      { id: "background_venue_01", label: "かいじょう背景" },
+      { id: "stamp_kodomomarche_01", label: "こどもマルシェ" }
+    ];
+
+    const QR_DEFS = [
+      { qrId: "qr_easter_01", label: "イースター", unlockItemIds: ["face_headband_easter_01"] },
+      { qrId: "qr_flower_01", label: "はないやリング", unlockItemIds: ["face_earring_flower_01"] },
+      { qrId: "qr_jelly_01", label: "ゼリー", unlockItemIds: ["character_jelly_01"] },
+      { qrId: "qr_chick_01", label: "ひよこリボン", unlockItemIds: ["character_chick_02"] },
+      { qrId: "qr_photo_01", label: "きせかえセット", unlockItemIds: ["frame_flower_soft_01", "background_venue_01", "stamp_kodomomarche_01"] }
+    ];
+
+    const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
+    const QR_MAP = new Map(QR_DEFS.map((qr) => [qr.qrId, qr]));
+
+    const status = document.getElementById("status");
+    const closeButton = document.getElementById("closeButton");
+    const rewardOverlay = document.getElementById("rewardOverlay");
+    const rewardTitle = document.getElementById("rewardTitle");
+    const rewardText = document.getElementById("rewardText");
+
+    let scanner = null;
+    let rewardTimeoutId = null;
+
+    function readStoredJson(primaryKey, legacyKey) {
+      try {
+        const primaryRaw = localStorage.getItem(primaryKey);
+        if (primaryRaw) {
+          return JSON.parse(primaryRaw);
+        }
+      } catch {}
+
+      try {
+        const legacyRaw = localStorage.getItem(legacyKey);
+        return legacyRaw ? JSON.parse(legacyRaw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function loadUnlockedItemIds() {
+      const parsed = readStoredJson(STORAGE_KEYS.unlocked, LEGACY_STORAGE_KEYS.unlocked);
+      return Array.isArray(parsed) ? parsed.filter((id) => ITEM_MAP.has(id) || id.startsWith("face_") || id.startsWith("character_") || id.startsWith("frame_") || id.startsWith("background_") || id.startsWith("stamp_")) : [];
+    }
+
+    function loadReadQrIds() {
+      const parsed = readStoredJson(STORAGE_KEYS.readQrs, LEGACY_STORAGE_KEYS.readQrs);
+      return Array.isArray(parsed) ? parsed.filter((id) => QR_MAP.has(id)) : [];
+    }
+
+    function saveState(unlockedItemIds, readQrIds) {
+      localStorage.setItem(STORAGE_KEYS.unlocked, JSON.stringify(unlockedItemIds));
+      localStorage.setItem(STORAGE_KEYS.readQrs, JSON.stringify(readQrIds));
+    }
+
+    function showReward(title, message) {
+      rewardTitle.textContent = title;
+      rewardText.textContent = message;
+      rewardOverlay.classList.add("visible");
+      if (rewardTimeoutId) {
+        clearTimeout(rewardTimeoutId);
+      }
+      rewardTimeoutId = setTimeout(() => {
+        rewardOverlay.classList.remove("visible");
+      }, 2000);
+    }
+
+    async function closeScanner() {
+      if (!scanner) {
+        window.location.href = "./";
+        return;
+      }
+      try {
+        await scanner.stop();
+      } catch {}
+      try {
+        await scanner.clear();
+      } catch {}
+      window.location.href = "./";
+    }
+
+    async function handleSuccess(decodedText) {
+      const qr = QR_MAP.get(decodedText);
+      if (!qr) {
+        status.textContent = "このQRは つかえないよ";
+        return;
+      }
+
+      const unlockedItemIds = loadUnlockedItemIds();
+      const readQrIds = loadReadQrIds();
+      const alreadyRead = readQrIds.includes(qr.qrId);
+      const newlyUnlocked = [];
+
+      if (!alreadyRead) {
+        readQrIds.push(qr.qrId);
+      }
+
+      for (const itemId of qr.unlockItemIds) {
+        if (!unlockedItemIds.includes(itemId)) {
+          unlockedItemIds.push(itemId);
+          newlyUnlocked.push(ITEM_MAP.get(itemId)?.label || itemId);
+        }
+      }
+
+      saveState(unlockedItemIds, readQrIds);
+
+      if (alreadyRead && !newlyUnlocked.length) {
+        showReward("もうみつけた！", "このQRは もう読んでいるよ");
+      } else {
+        showReward("アイテムGET!", newlyUnlocked.length ? newlyUnlocked.join(" / ") : qr.label);
+      }
+
+      status.textContent = "よみとり せいこう！";
+      setTimeout(() => {
+        closeScanner();
+      }, 1200);
+    }
+
+    async function start() {
+      if (typeof Html5Qrcode !== "function") {
+        status.textContent = "QRライブラリを よみこめませんでした";
+        return;
+      }
+
+      scanner = new Html5Qrcode("reader");
+      let cameraConfig = { facingMode: "environment" };
+
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras?.length) {
+          const backCamera = cameras.find((camera) => /back|rear|environment|背面|うしろ/i.test(camera.label)) || cameras[0];
+          cameraConfig = backCamera.id;
+        }
+      } catch {}
+
+      try {
+        await scanner.start(
+          cameraConfig,
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            rememberLastUsedCamera: true
+          },
+          handleSuccess,
+          () => {}
+        );
+        status.textContent = "QRを よみとり中…";
+      } catch (error) {
+        console.error(error);
+        status.textContent = "カメラを つけられませんでした";
+      }
+    }
+
+    closeButton.addEventListener("click", closeScanner);
+    start();
+  </script>
+</body>
+</html>
