@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>こどもマルシェAR</title>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -139,7 +140,7 @@
     </aside>
 
     <div id="qrPanel" class="qrPanel hiddenPanel" aria-hidden="true">
-      <video id="qrVideo" autoplay playsinline muted></video>
+      <div id="qrReader" class="qrReader"></div>
       <div class="qrOverlay">
         <div class="qrHeader">
           <div>

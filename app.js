@@ -1,4 +1,10 @@
 const STORAGE_KEYS = {
+  unlocked: "km_unlockedItemIds",
+  readQrs: "km_readQrIds",
+  savedFrame: "km_savedFrameData"
+};
+
+const LEGACY_STORAGE_KEYS = {
   unlocked: "kodomoMarcheUnlockedItems",
   readQrs: "kodomoMarcheReadQrIds",
   savedFrame: "kodomoMarcheSavedFrame"
@@ -85,26 +91,26 @@ const rewardOverlay = document.getElementById("rewardOverlay");
 const rewardTitle = document.getElementById("rewardTitle");
 const rewardText = document.getElementById("rewardText");
 const qrPanel = document.getElementById("qrPanel");
-const qrVideo = document.getElementById("qrVideo");
+const qrReader = document.getElementById("qrReader");
 const closeQrButton = document.getElementById("closeQrButton");
 const qrStatus = document.getElementById("qrStatus");
 
 const loadedAssets = new Map();
 let currentFacingMode = "user";
 let currentStream = null;
-let qrStream = null;
 let animationFrameId = null;
-let qrFrameId = null;
 let isSending = false;
 let toastTimeoutId = null;
 let rewardTimeoutId = null;
 let facePose = null;
-let barcodeDetector = null;
 let currentMode = "home";
 let previousModeBeforeQr = "home";
 let pickerCategory = null;
 let builderDragState = null;
 let selectedPlacementId = null;
+let qrScanner = null;
+let qrScannerState = "idle";
+let qrStartRequestId = 0;
 
 const state = {
   unlockedItemIds: loadUnlockedItemIds(),
@@ -131,38 +137,42 @@ function cloneFrame(frame) {
   return JSON.parse(JSON.stringify(frame));
 }
 
-function loadUnlockedItemIds() {
-  const fallback = defaultUnlockedIds();
+function readStoredJson(primaryKey, legacyKey) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.unlocked);
-    if (!raw) {
-      return fallback;
+    const primaryRaw = localStorage.getItem(primaryKey);
+    if (primaryRaw) {
+      return JSON.parse(primaryRaw);
     }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return fallback;
-    }
-    const known = parsed.filter((id) => ITEM_MAP.has(id));
-    return Array.from(new Set([...fallback, ...known]));
+  } catch {}
+
+  if (!legacyKey) {
+    return null;
+  }
+
+  try {
+    const legacyRaw = localStorage.getItem(legacyKey);
+    return legacyRaw ? JSON.parse(legacyRaw) : null;
   } catch {
-    return fallback;
+    return null;
   }
 }
 
+function loadUnlockedItemIds() {
+  const fallback = defaultUnlockedIds();
+  const parsed = readStoredJson(STORAGE_KEYS.unlocked, LEGACY_STORAGE_KEYS.unlocked);
+  if (!Array.isArray(parsed)) {
+    return fallback;
+  }
+  const known = parsed.filter((id) => ITEM_MAP.has(id));
+  return Array.from(new Set([...fallback, ...known]));
+}
+
 function loadReadQrIds() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.readQrs);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((id) => QR_MAP.has(id));
-  } catch {
+  const parsed = readStoredJson(STORAGE_KEYS.readQrs, LEGACY_STORAGE_KEYS.readQrs);
+  if (!Array.isArray(parsed)) {
     return [];
   }
+  return parsed.filter((id) => QR_MAP.has(id));
 }
 
 function sanitizeFrame(frame) {
@@ -212,15 +222,11 @@ function sanitizePlacement(placement) {
 }
 
 function loadSavedFrame() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.savedFrame);
-    if (!raw) {
-      return null;
-    }
-    return sanitizeFrame(JSON.parse(raw));
-  } catch {
+  const parsed = readStoredJson(STORAGE_KEYS.savedFrame, LEGACY_STORAGE_KEYS.savedFrame);
+  if (!parsed) {
     return null;
   }
+  return sanitizeFrame(parsed);
 }
 
 function savePersistentState() {
@@ -273,7 +279,7 @@ function showReward(title, message) {
   rewardTimeoutId = setTimeout(() => {
     rewardOverlay.classList.add("hiddenPanel");
     rewardTimeoutId = null;
-  }, 1700);
+  }, 2000);
 }
 
 function setMode(mode) {
@@ -281,7 +287,9 @@ function setMode(mode) {
   homeScreen.classList.toggle("hiddenPanel", mode !== "home");
   builderScreen.classList.toggle("hiddenPanel", mode !== "builder");
   collectionPanel.classList.toggle("hiddenPanel", mode !== "collection");
+  qrPanel.classList.toggle("hiddenPanel", mode !== "qr");
   collectionPanel.setAttribute("aria-hidden", String(mode !== "collection"));
+  qrPanel.setAttribute("aria-hidden", String(mode !== "qr"));
   for (const element of [homeButton, menuButton, qrButton, switchButton, captureButton]) {
     const visible = mode === "photo";
     element.classList.toggle("hiddenControl", !visible);
@@ -1088,20 +1096,76 @@ function handleUnlockFromUrl() {
   history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
-function ensureBarcodeDetector() {
-  if (!("BarcodeDetector" in window)) {
+function getHtml5QrcodeClass() {
+  return window.Html5Qrcode || window.html5Qrcode?.Html5Qrcode || null;
+}
+
+function ensureQrScanner() {
+  const Html5QrcodeClass = getHtml5QrcodeClass();
+  if (!Html5QrcodeClass) {
     return null;
   }
-  if (!barcodeDetector) {
-    barcodeDetector = new BarcodeDetector({ formats: ["qr_code"] });
+  if (!qrScanner) {
+    qrScanner = new Html5QrcodeClass("qrReader");
   }
-  return barcodeDetector;
+  return qrScanner;
+}
+
+async function stopQrScanner() {
+  if (!qrScanner) {
+    qrScannerState = "idle";
+    qrReader.innerHTML = "";
+    return;
+  }
+
+  const activeState = qrScannerState;
+  qrScannerState = "stopping";
+
+  try {
+    if (activeState === "running") {
+      await qrScanner.stop();
+    }
+  } catch {}
+
+  try {
+    await qrScanner.clear();
+  } catch {}
+
+  qrReader.innerHTML = "";
+  qrScannerState = "idle";
+}
+
+async function handleQrScanSuccess(decodedText) {
+  const qrIds = extractQrIds(decodedText);
+  if (qrIds.length) {
+    handleQrRewards(qrIds);
+    await stopQrMode();
+    return;
+  }
+
+  const itemIds = extractUnlockIds(decodedText);
+  if (itemIds.length) {
+    const newlyUnlocked = unlockItems(itemIds);
+    updateHomeProgress();
+    if (newlyUnlocked.length) {
+      showReward("アイテムGET!", newlyUnlocked.join(" / "));
+    } else {
+      showReward("もうもってるよ！", "このアイテムは もうGETしているよ");
+    }
+    await stopQrMode();
+    return;
+  }
+
+  qrStatus.textContent = "このQRではアイテムを解放できません";
 }
 
 async function startQrMode(fromMode = currentMode) {
-  const detector = ensureBarcodeDetector();
-  if (!detector) {
-    showToast("このブラウザでは ページ内QR読み取りが使えません");
+  const scanner = ensureQrScanner();
+  if (!scanner) {
+    showToast("このブラウザでは QR読み取りが使えません");
+    return;
+  }
+  if (qrScannerState === "running" || qrScannerState === "starting") {
     return;
   }
 
@@ -1109,34 +1173,48 @@ async function startQrMode(fromMode = currentMode) {
   closePickerPanel();
   stopPhotoCamera();
   setMode("qr");
-
-  qrPanel.classList.remove("hiddenPanel");
-  qrPanel.setAttribute("aria-hidden", "false");
   qrStatus.textContent = "QRをよみとり中…";
+  qrReader.innerHTML = "";
+  qrStartRequestId += 1;
+  const requestId = qrStartRequestId;
+  qrScannerState = "starting";
 
   try {
-    qrStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-    qrVideo.srcObject = qrStream;
-    await qrVideo.play();
-    scanQrLoop();
+    await scanner.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: (width, height) => {
+          const edge = Math.floor(Math.min(width, height) * 0.7);
+          return { width: edge, height: edge };
+        },
+        aspectRatio: 1
+      },
+      async (decodedText) => {
+        if (qrScannerState !== "running") {
+          return;
+        }
+        qrStatus.textContent = "QRをよみとりました";
+        await handleQrScanSuccess(decodedText);
+      },
+      () => {}
+    );
+    if (requestId !== qrStartRequestId) {
+      await stopQrScanner();
+      return;
+    }
+    qrScannerState = "running";
   } catch {
+    qrScannerState = "idle";
     qrStatus.textContent = "QRカメラをつけられませんでした";
+    showToast("QRカメラをつけられませんでした");
   }
 }
 
 async function stopQrMode() {
-  if (qrFrameId) {
-    cancelAnimationFrame(qrFrameId);
-    qrFrameId = null;
-  }
-  stopStream(qrStream);
-  qrStream = null;
-  qrVideo.srcObject = null;
-  qrPanel.classList.add("hiddenPanel");
-  qrPanel.setAttribute("aria-hidden", "true");
+  qrStartRequestId += 1;
+  await stopQrScanner();
+  qrStatus.textContent = "QRをよみとり中…";
 
   if (previousModeBeforeQr === "photo") {
     await switchToPhotoMode();
@@ -1147,39 +1225,6 @@ async function stopQrMode() {
     return;
   }
   switchToHomeMode();
-}
-
-async function scanQrLoop() {
-  const detector = ensureBarcodeDetector();
-  if (!detector || !qrStream) {
-    return;
-  }
-  try {
-    const barcodes = await detector.detect(qrVideo);
-    if (barcodes.length) {
-      const qrIds = extractQrIds(barcodes[0].rawValue);
-      if (qrIds.length) {
-        handleQrRewards(qrIds);
-        await stopQrMode();
-        return;
-      }
-      const itemIds = extractUnlockIds(barcodes[0].rawValue);
-      if (itemIds.length) {
-        const newlyUnlocked = unlockItems(itemIds);
-        if (newlyUnlocked.length) {
-          showReward("アイテムGET!", newlyUnlocked.join(" / "));
-        } else {
-          showReward("もうもってるよ！", "このアイテムは もうGETしているよ");
-        }
-        await stopQrMode();
-        return;
-      }
-      qrStatus.textContent = "このQRではアイテムを解放できません";
-    }
-  } catch {
-    qrStatus.textContent = "QRをよみとれませんでした";
-  }
-  qrFrameId = requestAnimationFrame(scanQrLoop);
 }
 
 async function init() {
