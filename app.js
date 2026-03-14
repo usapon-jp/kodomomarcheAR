@@ -1360,14 +1360,32 @@ async function stopQrMode() {
 }
 
 async function init() {
-  await loadRenderableAssets();
-  handleUnlockFromUrl();
-  renderCollection();
-  renderBuilderDraft();
-  updateHomeProgress();
-  updateCameraModeUi();
-  setMode("home");
   const initialScreen = consumeInitialScreenRoute();
+  updateCameraModeUi();
+  updateHomeProgress();
+
+  if (initialScreen === "qr") {
+    setMode("qr");
+    qrStatus.textContent = "QRカメラを じゅんび中…";
+  } else {
+    setMode("home");
+  }
+
+  try {
+    handleUnlockFromUrl();
+    renderCollection();
+    renderBuilderDraft();
+    await loadRenderableAssets();
+  } catch (error) {
+    console.error(error);
+    if (initialScreen === "qr") {
+      qrStatus.textContent = "じゅんび中に エラーがでました";
+    } else {
+      showToast("ページの じゅんびに しっぱいしました");
+    }
+    return;
+  }
+
   if (initialScreen === "qr") {
     setTimeout(() => {
       startQrMode("home");
