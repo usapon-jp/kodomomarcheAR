@@ -1,7 +1,7 @@
 const STORAGE_KEYS = {
   unlocked: "kodomoMarcheUnlockedItems",
-  selection: "kodomoMarcheSelection",
-  readQrs: "kodomoMarcheReadQrIds"
+  readQrs: "kodomoMarcheReadQrIds",
+  savedFrame: "kodomoMarcheSavedFrame"
 };
 
 const ITEM_DEFS = [
@@ -11,14 +11,14 @@ const ITEM_DEFS = [
   { id: "face_usamimi_04", category: "faceAccessory", label: "カラフル", src: "assets/face/face_usamimi_04.png", unlockedByDefault: true, slot: "head", scale: 1.12, offsetX: 0, offsetY: -0.12, angleScale: 1, angleOffset: 0 },
   { id: "face_headband_easter_01", category: "faceAccessory", label: "イースター", src: "assets/face/face_headband_easter_01.png", unlockedByDefault: false, slot: "head", scale: 0.98, offsetX: 0, offsetY: -0.06, angleScale: 1, angleOffset: 0 },
   { id: "face_earring_flower_01", category: "faceAccessory", label: "はないやリング", unlockedByDefault: false, slot: "earPair", leftSrc: "assets/face/face_earring_flower_left_01.png", rightSrc: "assets/face/face_earring_flower_right_01.png", scale: 0.46, leftOffsetX: 0.012, rightOffsetX: 0.012, offsetY: 0.045, angleScale: 0.22, angleOffset: 0 },
-  { id: "character_molddoll_01", category: "character", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.28 },
-  { id: "character_jelly_01", category: "character", label: "ゼリー", src: "assets/character/character_jelly_01.png", unlockedByDefault: false, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.24 },
-  { id: "character_chick_01", category: "character", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
-  { id: "character_chick_02", category: "character", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: false, defaultX: 0.5, defaultY: 0.88, defaultScale: 0.2 },
+  { id: "character_molddoll_01", category: "character", label: "モールドール", src: "assets/character/character_molddoll_01.svg", unlockedByDefault: true, defaultX: 0.5, defaultY: 0.78, defaultScale: 0.28 },
+  { id: "character_jelly_01", category: "character", label: "ゼリー", src: "assets/character/character_jelly_01.png", unlockedByDefault: false, defaultX: 0.46, defaultY: 0.78, defaultScale: 0.24 },
+  { id: "character_chick_01", category: "character", label: "ひよこ", src: "assets/character/character_chick_01.png", unlockedByDefault: true, defaultX: 0.54, defaultY: 0.78, defaultScale: 0.2 },
+  { id: "character_chick_02", category: "character", label: "ひよこリボン", src: "assets/character/character_chick_02.png", unlockedByDefault: false, defaultX: 0.54, defaultY: 0.78, defaultScale: 0.2 },
   { id: "frame_kodomomarche_01", category: "frame", label: "マルシェフレーム", src: "assets/frame/frame_kodomomarche_01.svg", unlockedByDefault: true },
   { id: "frame_flower_soft_01", category: "frame", label: "おはなフレーム", src: "assets/frame/frame_flower_soft_01.png", unlockedByDefault: false },
   { id: "background_venue_01", category: "background", label: "かいじょう背景", src: "assets/background/background_venue_01.png", unlockedByDefault: false },
-  { id: "stamp_kodomomarche_01", category: "stamp", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png", unlockedByDefault: false, defaultX: 0.5, defaultY: 0.18, defaultScale: 0.34 }
+  { id: "stamp_kodomomarche_01", category: "stamp", label: "こどもマルシェ", src: "assets/stamp/stamp_kodomomarche_01.png", unlockedByDefault: false, defaultX: 0.5, defaultY: 0.2, defaultScale: 0.34 }
 ];
 
 const QR_DEFS = [
@@ -29,13 +29,23 @@ const QR_DEFS = [
   { qrId: "qr_photo_01", label: "きせかえセット", unlockItemIds: ["frame_flower_soft_01", "background_venue_01", "stamp_kodomomarche_01"] }
 ];
 
+const CATEGORY_LABELS = {
+  faceAccessory: "顔アクセ",
+  character: "キャラ",
+  frame: "フレーム",
+  background: "背景",
+  stamp: "スタンプ"
+};
+
 const ITEM_MAP = new Map(ITEM_DEFS.map((item) => [item.id, item]));
 const QR_MAP = new Map(QR_DEFS.map((qr) => [qr.qrId, qr]));
+const PLACEMENT_CATEGORIES = new Set(["character", "stamp"]);
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const homeScreen = document.getElementById("homeScreen");
+const builderScreen = document.getElementById("builderScreen");
 const startQrButton = document.getElementById("startQrButton");
 const openBuilderButton = document.getElementById("openBuilderButton");
 const openCameraButton = document.getElementById("openCameraButton");
@@ -47,25 +57,39 @@ const menuButton = document.getElementById("menuButton");
 const qrButton = document.getElementById("qrButton");
 const switchButton = document.getElementById("switchButton");
 const captureButton = document.getElementById("captureButton");
+const closeBuilderButton = document.getElementById("closeBuilderButton");
+const saveFrameButton = document.getElementById("saveFrameButton");
+const builderStage = document.getElementById("builderStage");
+const builderBackgroundImage = document.getElementById("builderBackgroundImage");
+const builderFrameImage = document.getElementById("builderFrameImage");
+const builderPlacements = document.getElementById("builderPlacements");
+const builderFaceBadge = document.getElementById("builderFaceBadge");
+const builderFaceButton = document.getElementById("builderFaceButton");
+const builderBackgroundButton = document.getElementById("builderBackgroundButton");
+const builderFrameButton = document.getElementById("builderFrameButton");
+const builderCharacterButton = document.getElementById("builderCharacterButton");
+const builderStampButton = document.getElementById("builderStampButton");
+const deletePlacementButton = document.getElementById("deletePlacementButton");
 const pickerPanel = document.getElementById("pickerPanel");
 const closePickerButton = document.getElementById("closePickerButton");
+const pickerTitle = document.getElementById("pickerTitle");
+const pickerSubtitle = document.getElementById("pickerSubtitle");
+const pickerHint = document.getElementById("pickerHint");
+const pickerOptions = document.getElementById("pickerOptions");
 const collectionPanel = document.getElementById("collectionPanel");
 const closeCollectionButton = document.getElementById("closeCollectionButton");
 const collectionSummary = document.getElementById("collectionSummary");
 const collectionList = document.getElementById("collectionList");
-const faceAccessoryOptions = document.getElementById("faceAccessoryOptions");
-const characterOptions = document.getElementById("characterOptions");
-const frameOptions = document.getElementById("frameOptions");
-const backgroundOptions = document.getElementById("backgroundOptions");
-const stampOptions = document.getElementById("stampOptions");
 const toast = document.getElementById("toast");
+const rewardOverlay = document.getElementById("rewardOverlay");
+const rewardTitle = document.getElementById("rewardTitle");
+const rewardText = document.getElementById("rewardText");
 const qrPanel = document.getElementById("qrPanel");
 const qrVideo = document.getElementById("qrVideo");
 const closeQrButton = document.getElementById("closeQrButton");
 const qrStatus = document.getElementById("qrStatus");
 
 const loadedAssets = new Map();
-
 let currentFacingMode = "user";
 let currentStream = null;
 let qrStream = null;
@@ -73,28 +97,38 @@ let animationFrameId = null;
 let qrFrameId = null;
 let isSending = false;
 let toastTimeoutId = null;
+let rewardTimeoutId = null;
 let facePose = null;
-let dragState = null;
 let barcodeDetector = null;
 let currentMode = "home";
 let previousModeBeforeQr = "home";
+let pickerCategory = null;
+let builderDragState = null;
+let selectedPlacementId = null;
 
 const state = {
   unlockedItemIds: loadUnlockedItemIds(),
   readQrIds: loadReadQrIds(),
-  selectedFaceAccessoryId: null,
-  selectedCharacterId: null,
-  selectedFrameId: null,
-  selectedBackgroundId: null,
-  selectedStampId: null,
-  characterPlacement: null,
-  stampPlacement: null
+  savedFrame: loadSavedFrame()
 };
 
-hydrateSelection();
+let builderDraft = createInitialBuilderDraft();
 
 function defaultUnlockedIds() {
   return ITEM_DEFS.filter((item) => item.unlockedByDefault).map((item) => item.id);
+}
+
+function emptyFrame() {
+  return {
+    backgroundId: null,
+    faceAccessoryId: null,
+    frameId: null,
+    placements: []
+  };
+}
+
+function cloneFrame(frame) {
+  return JSON.parse(JSON.stringify(frame));
 }
 
 function loadUnlockedItemIds() {
@@ -131,74 +165,81 @@ function loadReadQrIds() {
   }
 }
 
-function hydrateSelection() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.selection);
-    if (!raw) {
-      return;
-    }
-    const parsed = JSON.parse(raw);
-    state.selectedFaceAccessoryId = sanitizeSelectedId(parsed.selectedFaceAccessoryId, "faceAccessory");
-    state.selectedCharacterId = sanitizeSelectedId(parsed.selectedCharacterId, "character");
-    state.selectedFrameId = sanitizeSelectedId(parsed.selectedFrameId, "frame");
-    state.selectedBackgroundId = sanitizeSelectedId(parsed.selectedBackgroundId, "background");
-    state.selectedStampId = sanitizeSelectedId(parsed.selectedStampId, "stamp");
-    state.characterPlacement = sanitizeCharacterPlacement(parsed.characterPlacement);
-    state.stampPlacement = sanitizeStampPlacement(parsed.stampPlacement);
-  } catch {
-    state.selectedFaceAccessoryId = null;
-    state.selectedCharacterId = null;
-    state.selectedFrameId = null;
-    state.selectedBackgroundId = null;
-    state.selectedStampId = null;
-    state.characterPlacement = null;
-    state.stampPlacement = null;
+function sanitizeFrame(frame) {
+  if (!frame || typeof frame !== "object") {
+    return emptyFrame();
   }
+  const backgroundId = sanitizeSlotItem(frame.backgroundId, "background");
+  const faceAccessoryId = sanitizeSlotItem(frame.faceAccessoryId, "faceAccessory");
+  const frameId = sanitizeSlotItem(frame.frameId, "frame");
+  const placements = Array.isArray(frame.placements)
+    ? frame.placements.map(sanitizePlacement).filter(Boolean)
+    : [];
+  return { backgroundId, faceAccessoryId, frameId, placements };
 }
 
-function sanitizeSelectedId(id, category) {
-  if (!id) {
+function sanitizeSlotItem(itemId, category) {
+  if (!itemId) {
     return null;
   }
-  const item = ITEM_MAP.get(id);
+  const item = ITEM_MAP.get(itemId);
   if (!item || item.category !== category) {
     return null;
   }
-  return state.unlockedItemIds.includes(id) ? id : null;
+  return state.unlockedItemIds.includes(itemId) ? itemId : null;
 }
 
-function sanitizeCharacterPlacement(placement) {
+function sanitizePlacement(placement) {
   if (!placement || typeof placement !== "object") {
     return null;
   }
-  if (typeof placement.x !== "number" || typeof placement.y !== "number") {
+  const item = ITEM_MAP.get(placement.itemId);
+  if (!item || !PLACEMENT_CATEGORIES.has(item.category)) {
     return null;
   }
-  return { x: clamp(placement.x, 0.12, 0.88), y: clamp(placement.y, 0.2, 0.96) };
+  if (!state.unlockedItemIds.includes(item.id)) {
+    return null;
+  }
+  return {
+    instanceId: typeof placement.instanceId === "string" ? placement.instanceId : `${item.id}-${Date.now()}`,
+    itemId: item.id,
+    category: item.category,
+    x: clamp(typeof placement.x === "number" ? placement.x : item.defaultX ?? 0.5, 0.08, 0.92),
+    y: clamp(typeof placement.y === "number" ? placement.y : item.defaultY ?? 0.6, 0.08, 0.92),
+    scale: clamp(typeof placement.scale === "number" ? placement.scale : item.defaultScale ?? 0.24, 0.12, 0.6),
+    rotation: typeof placement.rotation === "number" ? placement.rotation : 0
+  };
 }
 
-function sanitizeStampPlacement(placement) {
-  if (!placement || typeof placement !== "object") {
+function loadSavedFrame() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.savedFrame);
+    if (!raw) {
+      return null;
+    }
+    return sanitizeFrame(JSON.parse(raw));
+  } catch {
     return null;
   }
-  if (typeof placement.x !== "number" || typeof placement.y !== "number") {
-    return null;
-  }
-  return { x: clamp(placement.x, 0.1, 0.9), y: clamp(placement.y, 0.08, 0.92) };
 }
 
-function saveState() {
+function savePersistentState() {
   localStorage.setItem(STORAGE_KEYS.unlocked, JSON.stringify(state.unlockedItemIds));
-  localStorage.setItem(STORAGE_KEYS.selection, JSON.stringify({
-    selectedFaceAccessoryId: state.selectedFaceAccessoryId,
-    selectedCharacterId: state.selectedCharacterId,
-    selectedFrameId: state.selectedFrameId,
-    selectedBackgroundId: state.selectedBackgroundId,
-    selectedStampId: state.selectedStampId,
-    characterPlacement: state.characterPlacement,
-    stampPlacement: state.stampPlacement
-  }));
   localStorage.setItem(STORAGE_KEYS.readQrs, JSON.stringify(state.readQrIds));
+  if (state.savedFrame) {
+    localStorage.setItem(STORAGE_KEYS.savedFrame, JSON.stringify(state.savedFrame));
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.savedFrame);
+  }
+}
+
+function createInitialBuilderDraft() {
+  return state.savedFrame ? cloneFrame(state.savedFrame) : emptyFrame();
+}
+
+function resetBuilderDraft() {
+  builderDraft = createInitialBuilderDraft();
+  selectedPlacementId = null;
 }
 
 function clamp(value, min, max) {
@@ -222,96 +263,33 @@ function showToast(message) {
   }, 2200);
 }
 
+function showReward(title, message) {
+  rewardTitle.textContent = title;
+  rewardText.textContent = message;
+  rewardOverlay.classList.remove("hiddenPanel");
+  if (rewardTimeoutId) {
+    clearTimeout(rewardTimeoutId);
+  }
+  rewardTimeoutId = setTimeout(() => {
+    rewardOverlay.classList.add("hiddenPanel");
+    rewardTimeoutId = null;
+  }, 1700);
+}
+
 function setMode(mode) {
   currentMode = mode;
   homeScreen.classList.toggle("hiddenPanel", mode !== "home");
+  builderScreen.classList.toggle("hiddenPanel", mode !== "builder");
+  collectionPanel.classList.toggle("hiddenPanel", mode !== "collection");
+  collectionPanel.setAttribute("aria-hidden", String(mode !== "collection"));
   for (const element of [homeButton, menuButton, qrButton, switchButton, captureButton]) {
-    element.classList.toggle("hiddenControl", mode !== "ar");
+    const visible = mode === "photo";
+    element.classList.toggle("hiddenControl", !visible);
   }
 }
 
 function getUnlockedItems(category) {
   return ITEM_DEFS.filter((item) => item.category === category && state.unlockedItemIds.includes(item.id));
-}
-
-function renderOptionButtons(container, category, selectedId, onSelect) {
-  container.innerHTML = "";
-
-  const noneButton = document.createElement("button");
-  noneButton.type = "button";
-  noneButton.className = `optionButton${selectedId ? "" : " selected"}`;
-  noneButton.textContent = "なし";
-  noneButton.addEventListener("pointerup", (event) => {
-    stopEvent(event);
-    onSelect(null);
-  });
-  container.appendChild(noneButton);
-
-  for (const item of getUnlockedItems(category)) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `optionButton${selectedId === item.id ? " selected" : ""}`;
-    button.textContent = item.label;
-    button.addEventListener("pointerup", (event) => {
-      stopEvent(event);
-      onSelect(item.id);
-    });
-    container.appendChild(button);
-  }
-}
-
-function renderSelections() {
-  renderOptionButtons(faceAccessoryOptions, "faceAccessory", state.selectedFaceAccessoryId, (itemId) => {
-    state.selectedFaceAccessoryId = itemId;
-    saveState();
-    renderSelections();
-  });
-
-  renderOptionButtons(characterOptions, "character", state.selectedCharacterId, (itemId) => {
-    state.selectedCharacterId = itemId;
-    state.characterPlacement = itemId ? defaultCharacterPlacement(itemId) : null;
-    saveState();
-    renderSelections();
-  });
-
-  renderOptionButtons(frameOptions, "frame", state.selectedFrameId, (itemId) => {
-    state.selectedFrameId = itemId;
-    saveState();
-    renderSelections();
-  });
-
-  renderOptionButtons(backgroundOptions, "background", state.selectedBackgroundId, (itemId) => {
-    state.selectedBackgroundId = itemId;
-    saveState();
-    renderSelections();
-  });
-
-  renderOptionButtons(stampOptions, "stamp", state.selectedStampId, (itemId) => {
-    state.selectedStampId = itemId;
-    state.stampPlacement = itemId ? defaultStampPlacement(itemId) : null;
-    saveState();
-    renderSelections();
-  });
-}
-
-function renderCollection() {
-  collectionSummary.textContent = `見つけたQR ${state.readQrIds.length} / ${QR_DEFS.length}`;
-  collectionList.innerHTML = "";
-
-  for (const qr of QR_DEFS) {
-    const unlocked = state.readQrIds.includes(qr.qrId);
-    const itemLabels = qr.unlockItemIds.map((itemId) => ITEM_MAP.get(itemId)?.label).filter(Boolean).join(" / ");
-    const card = document.createElement("article");
-    card.className = `collectionCard${unlocked ? "" : " isLocked"}`;
-    card.innerHTML = `
-      <div class="collectionCardTop">
-        <div class="collectionCardTitle">${qr.label}</div>
-        <div class="collectionBadge${unlocked ? " isDone" : ""}">${unlocked ? "みつけた" : "まだ"}</div>
-      </div>
-      <div class="collectionItems">もらえるアイテム: ${itemLabels || "なし"}</div>
-    `;
-    collectionList.appendChild(card);
-  }
 }
 
 function updateHomeProgress() {
@@ -321,43 +299,247 @@ function updateHomeProgress() {
   homeProgressFill.style.width = `${total ? (found / total) * 100 : 0}%`;
 }
 
-function defaultCharacterPlacement(itemId) {
-  const item = ITEM_MAP.get(itemId);
-  if (!item) {
-    return null;
+function getAssetPreviewSrc(item) {
+  if (item.src) {
+    return item.src;
   }
-  return { x: item.defaultX ?? 0.5, y: item.defaultY ?? 0.86 };
+  if (item.leftSrc) {
+    return item.leftSrc;
+  }
+  return "";
 }
 
-function defaultStampPlacement(itemId) {
-  const item = ITEM_MAP.get(itemId);
-  if (!item) {
-    return null;
+function renderCollection() {
+  const unlockedCount = state.unlockedItemIds.length;
+  collectionSummary.textContent = `見つけたQR ${state.readQrIds.length} / ${QR_DEFS.length} ・ あつめたアイテム ${unlockedCount} / ${ITEM_DEFS.length}`;
+  collectionList.innerHTML = "";
+
+  for (const item of ITEM_DEFS) {
+    const unlocked = state.unlockedItemIds.includes(item.id);
+    const card = document.createElement("article");
+    card.className = `collectionCard${unlocked ? "" : " isLocked"}`;
+    const preview = unlocked
+      ? `<div class="collectionCardPreview"><img src="${getAssetPreviewSrc(item)}" alt=""></div>`
+      : '<div class="collectionCardPreview"><div class="collectionLockedMark">?</div></div>';
+    card.innerHTML = `
+      ${preview}
+      <div class="collectionCardTop">
+        <div class="collectionCardTitle">${unlocked ? item.label : "？？？"}</div>
+        <div class="collectionBadge${unlocked ? " isDone" : ""}">${unlocked ? "GET" : "まだ"}</div>
+      </div>
+      <div class="collectionMeta">${CATEGORY_LABELS[item.category]}</div>
+    `;
+    collectionList.appendChild(card);
   }
-  return { x: item.defaultX ?? 0.5, y: item.defaultY ?? 0.18 };
 }
 
 function closePickerPanel() {
+  pickerCategory = null;
   pickerPanel.classList.add("hiddenPanel");
   pickerPanel.setAttribute("aria-hidden", "true");
 }
 
-function openPickerPanel() {
-  closeCollectionPanel();
+function openPickerPanel(category) {
+  pickerCategory = category;
+  renderPickerOptions();
   pickerPanel.classList.remove("hiddenPanel");
   pickerPanel.setAttribute("aria-hidden", "false");
 }
 
-function closeCollectionPanel() {
-  collectionPanel.classList.add("hiddenPanel");
-  collectionPanel.setAttribute("aria-hidden", "true");
+function renderPickerOptions() {
+  if (!pickerCategory) {
+    return;
+  }
+  pickerTitle.textContent = `${CATEGORY_LABELS[pickerCategory]} をえらぶ`;
+  pickerSubtitle.textContent = pickerCategory === "character" || pickerCategory === "stamp"
+    ? "えらぶと ステージに追加されるよ"
+    : "えらぶと フレームに反映されるよ";
+  pickerHint.textContent = pickerCategory === "character" || pickerCategory === "stamp"
+    ? "追加したいものをタップしてね"
+    : "ひとつ選んでね";
+  pickerOptions.innerHTML = "";
+
+  if (!PLACEMENT_CATEGORIES.has(pickerCategory)) {
+    const noneButton = document.createElement("button");
+    noneButton.type = "button";
+    noneButton.className = `optionButton${!getDraftSlotValue(pickerCategory) ? " selected" : ""}`;
+    noneButton.textContent = "なし";
+    noneButton.addEventListener("pointerup", (event) => {
+      stopEvent(event);
+      applyPickerSelection(null);
+    });
+    pickerOptions.appendChild(noneButton);
+  }
+
+  for (const item of getUnlockedItems(pickerCategory)) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "optionButton";
+    button.textContent = item.label;
+    if (!PLACEMENT_CATEGORIES.has(pickerCategory) && getDraftSlotValue(pickerCategory) === item.id) {
+      button.classList.add("selected");
+    }
+    button.addEventListener("pointerup", (event) => {
+      stopEvent(event);
+      applyPickerSelection(item.id);
+    });
+    pickerOptions.appendChild(button);
+  }
 }
 
-function openCollectionPanel() {
+function getDraftSlotValue(category) {
+  if (category === "faceAccessory") {
+    return builderDraft.faceAccessoryId;
+  }
+  if (category === "background") {
+    return builderDraft.backgroundId;
+  }
+  if (category === "frame") {
+    return builderDraft.frameId;
+  }
+  return null;
+}
+
+function applyPickerSelection(itemId) {
+  if (!pickerCategory) {
+    return;
+  }
+  if (pickerCategory === "faceAccessory") {
+    builderDraft.faceAccessoryId = itemId;
+  } else if (pickerCategory === "background") {
+    builderDraft.backgroundId = itemId;
+  } else if (pickerCategory === "frame") {
+    builderDraft.frameId = itemId;
+  } else {
+    addPlacement(itemId);
+  }
+  renderBuilderDraft();
   closePickerPanel();
-  renderCollection();
-  collectionPanel.classList.remove("hiddenPanel");
-  collectionPanel.setAttribute("aria-hidden", "false");
+}
+
+function createPlacementFromItem(itemId) {
+  const item = ITEM_MAP.get(itemId);
+  if (!item || !PLACEMENT_CATEGORIES.has(item.category)) {
+    return null;
+  }
+  return {
+    instanceId: `${item.id}-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`}`,
+    itemId: item.id,
+    category: item.category,
+    x: item.defaultX ?? 0.5,
+    y: item.defaultY ?? (item.category === "stamp" ? 0.25 : 0.74),
+    scale: item.defaultScale ?? 0.24,
+    rotation: 0
+  };
+}
+
+function addPlacement(itemId) {
+  const placement = createPlacementFromItem(itemId);
+  if (!placement) {
+    return;
+  }
+  builderDraft.placements.push(placement);
+  selectedPlacementId = placement.instanceId;
+}
+
+function renderBuilderDraft() {
+  const backgroundAsset = getAssetById(builderDraft.backgroundId);
+  builderBackgroundImage.classList.toggle("hiddenPanel", !backgroundAsset);
+  if (backgroundAsset) {
+    builderBackgroundImage.src = backgroundAsset.src;
+  }
+
+  const frameAsset = getAssetById(builderDraft.frameId);
+  builderFrameImage.classList.toggle("hiddenPanel", !frameAsset);
+  if (frameAsset) {
+    builderFrameImage.src = frameAsset.src;
+  }
+
+  const faceItem = ITEM_MAP.get(builderDraft.faceAccessoryId);
+  builderFaceBadge.textContent = `顔アクセ: ${faceItem ? faceItem.label : "なし"}`;
+  builderPlacements.innerHTML = "";
+
+  for (const placement of builderDraft.placements) {
+    const item = ITEM_MAP.get(placement.itemId);
+    if (!item) {
+      continue;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `builderPlacement${selectedPlacementId === placement.instanceId ? " isSelected" : ""}`;
+    button.dataset.instanceId = placement.instanceId;
+    button.style.left = `${placement.x * 100}%`;
+    button.style.top = `${placement.y * 100}%`;
+    button.style.transform = `translate(-50%, -50%) rotate(${placement.rotation}deg) scale(${placement.scale / 0.24})`;
+    button.innerHTML = `<img src="${item.src}" alt="${item.label}">`;
+    button.addEventListener("pointerdown", beginBuilderDrag);
+    button.addEventListener("pointerup", (event) => {
+      stopEvent(event);
+      selectedPlacementId = placement.instanceId;
+      renderBuilderDraft();
+    });
+    builderPlacements.appendChild(button);
+  }
+
+  deletePlacementButton.disabled = !selectedPlacementId;
+}
+
+function beginBuilderDrag(event) {
+  const placementButton = event.currentTarget;
+  const instanceId = placementButton.dataset.instanceId;
+  const placement = builderDraft.placements.find((entry) => entry.instanceId === instanceId);
+  if (!placement) {
+    return;
+  }
+  const rect = builderStage.getBoundingClientRect();
+  builderDragState = {
+    instanceId,
+    offsetX: ((event.clientX - rect.left) / rect.width) - placement.x,
+    offsetY: ((event.clientY - rect.top) / rect.height) - placement.y
+  };
+  selectedPlacementId = instanceId;
+  renderBuilderDraft();
+  stopEvent(event);
+}
+
+function moveBuilderPlacement(event) {
+  if (!builderDragState || currentMode !== "builder") {
+    return;
+  }
+  const placement = builderDraft.placements.find((entry) => entry.instanceId === builderDragState.instanceId);
+  if (!placement) {
+    return;
+  }
+  const rect = builderStage.getBoundingClientRect();
+  placement.x = clamp(((event.clientX - rect.left) / rect.width) - builderDragState.offsetX, 0.1, 0.9);
+  placement.y = clamp(((event.clientY - rect.top) / rect.height) - builderDragState.offsetY, 0.12, 0.9);
+  renderBuilderDraft();
+}
+
+function endBuilderDrag() {
+  builderDragState = null;
+}
+
+function deleteSelectedPlacement() {
+  if (!selectedPlacementId) {
+    return;
+  }
+  builderDraft.placements = builderDraft.placements.filter((placement) => placement.instanceId !== selectedPlacementId);
+  selectedPlacementId = null;
+  renderBuilderDraft();
+}
+
+function saveBuilderFrame() {
+  state.savedFrame = sanitizeFrame(builderDraft);
+  savePersistentState();
+  showToast("フレームを ほぞんしました");
+}
+
+function getAssetById(itemId) {
+  if (!itemId) {
+    return null;
+  }
+  return loadedAssets.get(itemId) || null;
 }
 
 function updateCameraModeUi() {
@@ -432,17 +614,6 @@ async function loadRenderableAssets() {
   }
 }
 
-function getSelectedAsset(category, selectedId) {
-  if (!selectedId) {
-    return null;
-  }
-  const item = loadedAssets.get(selectedId);
-  if (!item || item.category !== category) {
-    return null;
-  }
-  return item;
-}
-
 const faceMesh = new FaceMesh({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
 });
@@ -458,24 +629,24 @@ faceMesh.onResults((results) => {
   canvas.width = video.videoWidth || canvas.width;
   canvas.height = video.videoHeight || canvas.height;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const photoRect = getPhotoRect();
-  drawBackgroundLayer();
-  drawCameraLayer(results.image, photoRect);
+  const activeFrame = state.savedFrame;
+  const photoRect = getPhotoRect(activeFrame);
+  drawBackgroundLayer(activeFrame);
+  drawCameraLayer(results.image, photoRect, activeFrame);
   facePose = null;
 
-  if (results.multiFaceLandmarks?.length) {
+  if (results.multiFaceLandmarks?.length && activeFrame?.faceAccessoryId) {
     const landmarks = results.multiFaceLandmarks[0];
     facePose = computeFacePose(landmarks, photoRect);
-    drawFaceAccessoryLayer(facePose);
+    drawFaceAccessoryLayer(facePose, activeFrame.faceAccessoryId);
   }
 
-  drawCharacterLayer();
-  drawStampLayer();
-  drawFrameLayer();
+  drawPlacementLayer(activeFrame, photoRect);
+  drawFrameLayer(activeFrame);
 });
 
-function getPhotoRect() {
-  if (!state.selectedBackgroundId) {
+function getPhotoRect(frameData) {
+  if (!frameData?.backgroundId) {
     return { left: 0, top: 0, width: canvas.width, height: canvas.height };
   }
 
@@ -515,16 +686,16 @@ function drawImageCover(image, left, top, width, height, mirrored = false) {
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
 }
 
-function drawBackgroundLayer() {
-  const asset = getSelectedAsset("background", state.selectedBackgroundId);
+function drawBackgroundLayer(frameData) {
+  const asset = getAssetById(frameData?.backgroundId);
   if (!asset) {
     return;
   }
   drawImageCover(asset.canvas, 0, 0, canvas.width, canvas.height, false);
 }
 
-function drawCameraLayer(image, rect) {
-  if (!state.selectedBackgroundId) {
+function drawCameraLayer(image, rect, frameData) {
+  if (!frameData?.backgroundId) {
     drawImageCover(image, 0, 0, canvas.width, canvas.height, currentFacingMode === "user");
     return;
   }
@@ -605,8 +776,8 @@ function computeFacePose(landmarks, rect) {
   };
 }
 
-function drawFaceAccessoryLayer(pose) {
-  const asset = getSelectedAsset("faceAccessory", state.selectedFaceAccessoryId);
+function drawFaceAccessoryLayer(pose, accessoryId) {
+  const asset = getAssetById(accessoryId);
   if (!asset || !pose) {
     return;
   }
@@ -652,42 +823,30 @@ function drawEarPairAccessoryLayer(asset, pose) {
   ctx.restore();
 }
 
-function drawCharacterLayer() {
-  const asset = getSelectedAsset("character", state.selectedCharacterId);
-  if (!asset) {
+function drawPlacementLayer(frameData, photoRect) {
+  if (!frameData?.placements?.length) {
     return;
   }
-  if (!state.characterPlacement) {
-    state.characterPlacement = defaultCharacterPlacement(asset.id);
-    saveState();
+  const baseWidth = frameData.backgroundId ? photoRect.width : canvas.width;
+  for (const placement of frameData.placements) {
+    const asset = getAssetById(placement.itemId);
+    if (!asset) {
+      continue;
+    }
+    const width = baseWidth * placement.scale;
+    const height = width * (asset.height / asset.width);
+    const x = frameData.backgroundId ? photoRect.left + (placement.x * photoRect.width) : placement.x * canvas.width;
+    const y = frameData.backgroundId ? photoRect.top + (placement.y * photoRect.height) : placement.y * canvas.height;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((placement.rotation || 0) * (Math.PI / 180));
+    ctx.drawImage(asset.canvas, -width / 2, -height / 2, width, height);
+    ctx.restore();
   }
-  const photoRect = getPhotoRect();
-  const baseWidth = state.selectedBackgroundId ? photoRect.width : canvas.width;
-  const width = baseWidth * (asset.defaultScale ?? 0.28);
-  const height = width * (asset.height / asset.width);
-  const x = photoRect.left + (state.characterPlacement.x * photoRect.width);
-  const y = photoRect.top + (state.characterPlacement.y * photoRect.height);
-  ctx.drawImage(asset.canvas, x - width / 2, y - height, width, height);
 }
 
-function drawStampLayer() {
-  const asset = getSelectedAsset("stamp", state.selectedStampId);
-  if (!asset) {
-    return;
-  }
-  if (!state.stampPlacement) {
-    state.stampPlacement = defaultStampPlacement(asset.id);
-    saveState();
-  }
-  const width = canvas.width * (asset.defaultScale ?? 0.34);
-  const height = width * (asset.height / asset.width);
-  const x = state.stampPlacement.x * canvas.width;
-  const y = state.stampPlacement.y * canvas.height;
-  ctx.drawImage(asset.canvas, x - width / 2, y - height / 2, width, height);
-}
-
-function drawFrameLayer() {
-  const asset = getSelectedAsset("frame", state.selectedFrameId);
+function drawFrameLayer(frameData) {
+  const asset = getAssetById(frameData?.frameId);
   if (!asset) {
     return;
   }
@@ -719,17 +878,17 @@ function stopStream(stream) {
   }
 }
 
-function stopArCamera() {
+function stopPhotoCamera() {
   stopArLoop();
   stopStream(currentStream);
   currentStream = null;
   video.srcObject = null;
 }
 
-async function startArCamera(mode = currentFacingMode) {
+async function startPhotoCamera(mode = currentFacingMode) {
   currentFacingMode = mode;
   updateCameraModeUi();
-  stopArCamera();
+  stopPhotoCamera();
 
   try {
     currentStream = await navigator.mediaDevices.getUserMedia({
@@ -752,110 +911,34 @@ async function startArCamera(mode = currentFacingMode) {
 
 function switchToHomeMode() {
   closePickerPanel();
-  closeCollectionPanel();
-  stopArCamera();
+  stopPhotoCamera();
   setMode("home");
 }
 
-async function switchToArMode() {
+function switchToBuilderMode() {
   closePickerPanel();
-  closeCollectionPanel();
-  setMode("ar");
-  await startArCamera(currentFacingMode);
+  stopPhotoCamera();
+  resetBuilderDraft();
+  renderBuilderDraft();
+  setMode("builder");
 }
 
-function getCanvasPointFromEvent(event) {
-  const rect = canvas.getBoundingClientRect();
-  const source = event.changedTouches ? event.changedTouches[0] : event;
-  const x = ((source.clientX - rect.left) / rect.width) * canvas.width;
-  const y = ((source.clientY - rect.top) / rect.height) * canvas.height;
-  return { x, y };
-}
-
-function getCharacterBounds() {
-  const asset = getSelectedAsset("character", state.selectedCharacterId);
-  if (!asset || !state.characterPlacement) {
-    return null;
-  }
-  const photoRect = getPhotoRect();
-  const baseWidth = state.selectedBackgroundId ? photoRect.width : canvas.width;
-  const width = baseWidth * (asset.defaultScale ?? 0.28);
-  const height = width * (asset.height / asset.width);
-  const x = photoRect.left + (state.characterPlacement.x * photoRect.width);
-  const y = photoRect.top + (state.characterPlacement.y * photoRect.height);
-  return { left: x - width / 2, right: x + width / 2, top: y - height, bottom: y };
-}
-
-function getStampBounds() {
-  const asset = getSelectedAsset("stamp", state.selectedStampId);
-  if (!asset || !state.stampPlacement) {
-    return null;
-  }
-  const width = canvas.width * (asset.defaultScale ?? 0.34);
-  const height = width * (asset.height / asset.width);
-  const x = state.stampPlacement.x * canvas.width;
-  const y = state.stampPlacement.y * canvas.height;
-  return { left: x - width / 2, right: x + width / 2, top: y - height / 2, bottom: y + height / 2 };
-}
-
-function isInsideBounds(point, bounds) {
-  return point.x >= bounds.left && point.x <= bounds.right && point.y >= bounds.top && point.y <= bounds.bottom;
-}
-
-function beginCharacterDrag(event) {
-  const stampBounds = getStampBounds();
-  if (stampBounds) {
-    const point = getCanvasPointFromEvent(event);
-    if (isInsideBounds(point, stampBounds)) {
-      const centerX = state.stampPlacement.x * canvas.width;
-      const centerY = state.stampPlacement.y * canvas.height;
-      dragState = { kind: "stamp", offsetX: point.x - centerX, offsetY: point.y - centerY };
-      stopEvent(event);
-      return;
-    }
-  }
-
-  const bounds = getCharacterBounds();
-  if (!bounds) {
+async function switchToPhotoMode() {
+  closePickerPanel();
+  if (!state.savedFrame) {
+    showToast("先に フレームを作ってね");
+    switchToBuilderMode();
     return;
   }
-  const point = getCanvasPointFromEvent(event);
-  if (!isInsideBounds(point, bounds)) {
-    return;
-  }
-  const photoRect = getPhotoRect();
-  const centerX = photoRect.left + (state.characterPlacement.x * photoRect.width);
-  const bottomY = photoRect.top + (state.characterPlacement.y * photoRect.height);
-  dragState = { kind: "character", offsetX: point.x - centerX, offsetY: point.y - bottomY };
-  stopEvent(event);
+  setMode("photo");
+  await startPhotoCamera(currentFacingMode);
 }
 
-function moveCharacter(event) {
-  if (!dragState) {
-    return;
-  }
-  const point = getCanvasPointFromEvent(event);
-  if (dragState.kind === "stamp" && state.selectedStampId) {
-    state.stampPlacement = {
-      x: clamp((point.x - dragState.offsetX) / canvas.width, 0.1, 0.9),
-      y: clamp((point.y - dragState.offsetY) / canvas.height, 0.08, 0.92)
-    };
-    saveState();
-    return;
-  }
-  if (dragState.kind !== "character" || !state.selectedCharacterId) {
-    return;
-  }
-  const photoRect = getPhotoRect();
-  state.characterPlacement = {
-    x: clamp((point.x - dragState.offsetX - photoRect.left) / photoRect.width, 0.12, 0.88),
-    y: clamp((point.y - dragState.offsetY - photoRect.top) / photoRect.height, 0.26, 0.96)
-  };
-  saveState();
-}
-
-function endCharacterDrag() {
-  dragState = null;
+function switchToCollectionMode() {
+  closePickerPanel();
+  stopPhotoCamera();
+  renderCollection();
+  setMode("collection");
 }
 
 function savePhoto() {
@@ -881,17 +964,15 @@ function unlockItems(itemIds) {
     state.unlockedItemIds.push(itemId);
     newlyUnlocked.push(item.label);
   }
-  saveState();
-  renderSelections();
+  savePersistentState();
   renderCollection();
-  if (newlyUnlocked.length) {
-    showToast(`${newlyUnlocked.join(" / ")} をあつめたよ`);
-  }
+  return newlyUnlocked;
 }
 
-function markQrRead(qrIds) {
-  let changed = false;
-  const unlockedItemIds = [];
+function handleQrRewards(qrIds) {
+  const newQrIds = [];
+  const itemIds = [];
+
   for (const qrId of qrIds) {
     const qr = QR_MAP.get(qrId);
     if (!qr) {
@@ -899,16 +980,26 @@ function markQrRead(qrIds) {
     }
     if (!state.readQrIds.includes(qrId)) {
       state.readQrIds.push(qrId);
-      changed = true;
+      newQrIds.push(qrId);
     }
-    unlockedItemIds.push(...qr.unlockItemIds);
+    itemIds.push(...qr.unlockItemIds);
   }
-  if (changed) {
-    saveState();
+
+  const newlyUnlocked = unlockItems(itemIds);
+
+  if (newQrIds.length) {
+    savePersistentState();
     updateHomeProgress();
-    renderCollection();
   }
-  unlockItems(unlockedItemIds);
+
+  if (newQrIds.length || newlyUnlocked.length) {
+    const rewardNames = newlyUnlocked.length
+      ? newlyUnlocked.join(" / ")
+      : newQrIds.map((qrId) => QR_MAP.get(qrId)?.label).filter(Boolean).join(" / ");
+    showReward("アイテムGET!", rewardNames);
+  } else {
+    showReward("もうみつけた！", "このQRは もう読んでいるよ");
+  }
 }
 
 function extractQrIds(rawValue) {
@@ -979,11 +1070,15 @@ function handleUnlockFromUrl() {
   }
 
   if (qrIds.length) {
-    markQrRead(qrIds);
+    handleQrRewards(qrIds);
   }
   if (itemIds.length) {
-    unlockItems(itemIds);
+    const newlyUnlocked = unlockItems(itemIds);
+    if (newlyUnlocked.length) {
+      showReward("アイテムGET!", newlyUnlocked.join(" / "));
+    }
   }
+
   if (!qrIds.length && !itemIds.length) {
     return;
   }
@@ -1012,8 +1107,7 @@ async function startQrMode(fromMode = currentMode) {
 
   previousModeBeforeQr = fromMode;
   closePickerPanel();
-  closeCollectionPanel();
-  stopArCamera();
+  stopPhotoCamera();
   setMode("qr");
 
   qrPanel.classList.remove("hiddenPanel");
@@ -1044,11 +1138,15 @@ async function stopQrMode() {
   qrPanel.classList.add("hiddenPanel");
   qrPanel.setAttribute("aria-hidden", "true");
 
-  if (previousModeBeforeQr === "ar") {
-    await switchToArMode();
-  } else {
-    switchToHomeMode();
+  if (previousModeBeforeQr === "photo") {
+    await switchToPhotoMode();
+    return;
   }
+  if (previousModeBeforeQr === "builder") {
+    setMode("builder");
+    return;
+  }
+  switchToHomeMode();
 }
 
 async function scanQrLoop() {
@@ -1061,13 +1159,18 @@ async function scanQrLoop() {
     if (barcodes.length) {
       const qrIds = extractQrIds(barcodes[0].rawValue);
       if (qrIds.length) {
-        markQrRead(qrIds);
+        handleQrRewards(qrIds);
         await stopQrMode();
         return;
       }
       const itemIds = extractUnlockIds(barcodes[0].rawValue);
       if (itemIds.length) {
-        unlockItems(itemIds);
+        const newlyUnlocked = unlockItems(itemIds);
+        if (newlyUnlocked.length) {
+          showReward("アイテムGET!", newlyUnlocked.join(" / "));
+        } else {
+          showReward("もうもってるよ！", "このアイテムは もうGETしているよ");
+        }
         await stopQrMode();
         return;
       }
@@ -1079,17 +1182,11 @@ async function scanQrLoop() {
   qrFrameId = requestAnimationFrame(scanQrLoop);
 }
 
-function shouldIgnoreCanvasPointer(target) {
-  return Boolean(target.closest("#homeScreen, #pickerPanel, #collectionPanel, #menuButton, #qrButton, #switchButton, #captureButton, #homeButton, #closePickerButton, #closeCollectionButton, #closeQrButton"));
-}
-
 async function init() {
   await loadRenderableAssets();
-  renderSelections();
-  renderCollection();
   handleUnlockFromUrl();
-  renderSelections();
   renderCollection();
+  renderBuilderDraft();
   updateHomeProgress();
   updateCameraModeUi();
   setMode("home");
@@ -1102,31 +1199,57 @@ startQrButton.addEventListener("pointerup", (event) => {
 
 openBuilderButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
-  openPickerPanel();
+  switchToBuilderMode();
 });
 
 openCameraButton.addEventListener("pointerup", async (event) => {
   stopEvent(event);
-  await switchToArMode();
+  await switchToPhotoMode();
 });
 
 openCollectionButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
-  openCollectionPanel();
+  switchToCollectionMode();
 });
 
-homeButton.addEventListener("pointerup", (event) => {
+closeBuilderButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
   switchToHomeMode();
 });
 
-menuButton.addEventListener("pointerup", (event) => {
+saveFrameButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
-  if (pickerPanel.classList.contains("hiddenPanel")) {
-    openPickerPanel();
-  } else {
-    closePickerPanel();
-  }
+  saveBuilderFrame();
+});
+
+builderFaceButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  openPickerPanel("faceAccessory");
+});
+
+builderBackgroundButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  openPickerPanel("background");
+});
+
+builderFrameButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  openPickerPanel("frame");
+});
+
+builderCharacterButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  openPickerPanel("character");
+});
+
+builderStampButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  openPickerPanel("stamp");
+});
+
+deletePlacementButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  deleteSelectedPlacement();
 });
 
 closePickerButton.addEventListener("pointerup", (event) => {
@@ -1136,12 +1259,22 @@ closePickerButton.addEventListener("pointerup", (event) => {
 
 closeCollectionButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
-  closeCollectionPanel();
+  switchToHomeMode();
+});
+
+homeButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  switchToHomeMode();
+});
+
+menuButton.addEventListener("pointerup", (event) => {
+  stopEvent(event);
+  switchToBuilderMode();
 });
 
 qrButton.addEventListener("pointerup", (event) => {
   stopEvent(event);
-  startQrMode("ar");
+  startQrMode("photo");
 });
 
 closeQrButton.addEventListener("pointerup", (event) => {
@@ -1152,7 +1285,7 @@ closeQrButton.addEventListener("pointerup", (event) => {
 switchButton.addEventListener("pointerup", async (event) => {
   stopEvent(event);
   const nextMode = currentFacingMode === "user" ? "environment" : "user";
-  await startArCamera(nextMode);
+  await startPhotoCamera(nextMode);
 });
 
 captureButton.addEventListener("pointerup", (event) => {
@@ -1160,22 +1293,15 @@ captureButton.addEventListener("pointerup", (event) => {
   savePhoto();
 });
 
-canvas.addEventListener("pointerdown", (event) => {
-  if (currentMode !== "ar" || shouldIgnoreCanvasPointer(event.target)) {
+builderStage.addEventListener("pointerdown", (event) => {
+  if (event.target === builderStage || event.target.classList.contains("builderPhotoWindow")) {
+    selectedPlacementId = null;
+    renderBuilderDraft();
     return;
   }
-  beginCharacterDrag(event);
 });
 
-window.addEventListener("pointermove", (event) => {
-  if (currentMode !== "ar") {
-    return;
-  }
-  moveCharacter(event);
-});
-
-window.addEventListener("pointerup", () => {
-  endCharacterDrag();
-});
+window.addEventListener("pointermove", moveBuilderPlacement);
+window.addEventListener("pointerup", endBuilderDrag);
 
 init();

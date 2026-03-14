@@ -59,6 +59,37 @@
       </div>
     </section>
 
+    <section id="builderScreen" class="builderScreen hiddenPanel">
+      <div class="builderHeader">
+        <button id="closeBuilderButton" class="closeButton" type="button" aria-label="ホームにもどる">←</button>
+        <div class="builderHeaderText">
+          <div class="panelTitle">フレームをつくる</div>
+          <div class="panelSubtitle">集めたアイテムで じぶんのフレームを作ろう</div>
+        </div>
+        <button id="saveFrameButton" class="ghostButton builderPrimaryButton" type="button">保存</button>
+      </div>
+
+      <div class="builderStageWrap">
+        <div id="builderStage" class="builderStage">
+          <div class="builderStageBase"></div>
+          <img id="builderBackgroundImage" class="builderBackgroundImage hiddenPanel" alt="">
+          <div class="builderPhotoWindow"></div>
+          <div id="builderPlacements" class="builderPlacements"></div>
+          <img id="builderFrameImage" class="builderFrameImage hiddenPanel" alt="">
+          <div id="builderFaceBadge" class="builderFaceBadge">顔アクセ: なし</div>
+        </div>
+      </div>
+
+      <div class="builderActions">
+        <button id="builderFaceButton" class="builderActionButton" type="button">顔アクセ</button>
+        <button id="builderBackgroundButton" class="builderActionButton" type="button">背景</button>
+        <button id="builderFrameButton" class="builderActionButton" type="button">フレーム</button>
+        <button id="builderCharacterButton" class="builderActionButton" type="button">キャラ追加</button>
+        <button id="builderStampButton" class="builderActionButton" type="button">スタンプ追加</button>
+        <button id="deletePlacementButton" class="builderActionButton dangerButton" type="button">選んだものを消す</button>
+      </div>
+    </section>
+
     <header class="topBar">
       <button id="homeButton" class="ghostButton hiddenControl" type="button">ホーム</button>
       <div class="topBarRight">
@@ -83,35 +114,15 @@
     <aside id="pickerPanel" class="pickerPanel hiddenPanel" aria-hidden="true">
       <div class="panelHeader">
         <div>
-          <div class="panelTitle">フレームをつくる</div>
-          <div class="panelSubtitle">集めたアイテムからえらんでね</div>
+          <div id="pickerTitle" class="panelTitle">アイテムをえらぶ</div>
+          <div id="pickerSubtitle" class="panelSubtitle">使いたいものをえらんでね</div>
         </div>
         <button id="closePickerButton" class="closeButton" type="button" aria-label="閉じる">×</button>
       </div>
 
       <section class="pickerSection">
-        <div class="sectionTitle">顔アクセ</div>
-        <div id="faceAccessoryOptions" class="optionGrid"></div>
-      </section>
-
-      <section class="pickerSection">
-        <div class="sectionTitle">キャラ</div>
-        <div id="characterOptions" class="optionGrid"></div>
-      </section>
-
-      <section class="pickerSection">
-        <div class="sectionTitle">フレーム</div>
-        <div id="frameOptions" class="optionGrid"></div>
-      </section>
-
-      <section class="pickerSection">
-        <div class="sectionTitle">背景</div>
-        <div id="backgroundOptions" class="optionGrid"></div>
-      </section>
-
-      <section class="pickerSection">
-        <div class="sectionTitle">スタンプ</div>
-        <div id="stampOptions" class="optionGrid"></div>
+        <div id="pickerHint" class="sectionTitle">えらんで 追加してね</div>
+        <div id="pickerOptions" class="optionGrid"></div>
       </section>
     </aside>
 
@@ -143,6 +154,12 @@
     </div>
 
     <div id="toast" class="toast" aria-live="polite"></div>
+    <div id="rewardOverlay" class="rewardOverlay hiddenPanel" aria-live="polite">
+      <div class="rewardCard">
+        <div id="rewardTitle" class="rewardTitle">アイテムGET!</div>
+        <div id="rewardText" class="rewardText"></div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
