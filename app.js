@@ -296,6 +296,12 @@ function consumeInitialScreenRoute() {
   return screen;
 }
 
+function goToQrScreen() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("screen", "qr");
+  window.location.href = `${url.pathname}${url.search}${url.hash}`;
+}
+
 function bindPress(element, handler) {
   let lastHandledAt = 0;
   const invoke = async (event) => {
@@ -1369,9 +1375,14 @@ async function init() {
   }
 }
 
-bindPress(startQrButton, (event) => {
+startQrButton.addEventListener("click", (event) => {
   stopEvent(event);
-  return startQrMode("home");
+  goToQrScreen();
+});
+
+startQrButton.addEventListener("touchend", (event) => {
+  stopEvent(event);
+  goToQrScreen();
 });
 
 bindPress(openBuilderButton, (event) => {
