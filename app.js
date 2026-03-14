@@ -111,6 +111,8 @@ let selectedPlacementId = null;
 let qrScanner = null;
 let qrScannerState = "idle";
 let qrStartRequestId = 0;
+let faceMesh = null;
+let faceMeshReady = false;
 
 const state = {
   unlockedItemIds: loadUnlockedItemIds(),
@@ -622,36 +624,51 @@ async function loadRenderableAssets() {
   }
 }
 
-const faceMesh = new FaceMesh({
-  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-});
-
-faceMesh.setOptions({
-  maxNumFaces: 1,
-  refineLandmarks: true,
-  minDetectionConfidence: 0.5,
-  minTrackingConfidence: 0.5
-});
-
-faceMesh.onResults((results) => {
+function drawPhotoFrame(image, landmarks = null) {
   canvas.width = video.videoWidth || canvas.width;
   canvas.height = video.videoHeight || canvas.height;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const activeFrame = state.savedFrame;
   const photoRect = getPhotoRect(activeFrame);
   drawBackgroundLayer(activeFrame);
-  drawCameraLayer(results.image, photoRect, activeFrame);
+  drawCameraLayer(image, photoRect, activeFrame);
   facePose = null;
 
-  if (results.multiFaceLandmarks?.length && activeFrame?.faceAccessoryId) {
-    const landmarks = results.multiFaceLandmarks[0];
+  if (landmarks?.length && activeFrame?.faceAccessoryId) {
     facePose = computeFacePose(landmarks, photoRect);
     drawFaceAccessoryLayer(facePose, activeFrame.faceAccessoryId);
   }
 
   drawPlacementLayer(activeFrame, photoRect);
   drawFrameLayer(activeFrame);
-});
+}
+
+function ensureFaceMesh() {
+  if (faceMeshReady && faceMesh) {
+    return faceMesh;
+  }
+  if (typeof window.FaceMesh !== "function") {
+    return null;
+  }
+
+  faceMesh = new window.FaceMesh({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+  });
+
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
+  });
+
+  faceMesh.onResults((results) => {
+    drawPhotoFrame(results.image, results.multiFaceLandmarks?.[0] || null);
+  });
+
+  faceMeshReady = true;
+  return faceMesh;
+}
 
 function getPhotoRect(frameData) {
   if (!frameData?.backgroundId) {
@@ -862,10 +879,19 @@ function drawFrameLayer(frameData) {
 }
 
 async function renderLoop() {
+  const activeFaceMesh = ensureFaceMesh();
+  if (!activeFaceMesh) {
+    if (video.readyState >= 2) {
+      drawPhotoFrame(video);
+    }
+    animationFrameId = requestAnimationFrame(renderLoop);
+    return;
+  }
+
   if (video.readyState >= 2 && !isSending) {
     isSending = true;
     try {
-      await faceMesh.send({ image: video });
+      await activeFaceMesh.send({ image: video });
     } finally {
       isSending = false;
     }
@@ -899,6 +925,7 @@ async function startPhotoCamera(mode = currentFacingMode) {
   stopPhotoCamera();
 
   try {
+    ensureFaceMesh();
     currentStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: mode },
