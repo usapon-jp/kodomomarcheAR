@@ -1375,16 +1375,6 @@ async function init() {
   }
 }
 
-startQrButton.addEventListener("click", (event) => {
-  stopEvent(event);
-  goToQrScreen();
-});
-
-startQrButton.addEventListener("touchend", (event) => {
-  stopEvent(event);
-  goToQrScreen();
-});
-
 bindPress(openBuilderButton, (event) => {
   stopEvent(event);
   switchToBuilderMode();
